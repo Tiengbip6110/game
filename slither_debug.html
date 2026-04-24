@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slither Debug</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px black;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            display: none;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #00ff88;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #00cc66;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>Score: <span id="score">0</span></h2>
+        <h3>High Score: <span id="highScore">0</span></h3>
+    </div>
+    <div id="gameOver">
+        <h1>Game Over</h1>
+        <p>Your Score: <span id="finalScore">0</span></p>
+        <button id="restartBtn">Restart</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // --- GAME CONSTANTS ---
+        const WORLD_SIZE = 2000;
+        const GRID_SIZE = 50;
+        const SNAKE_SPEED = 6;
+        const TURN_SPEED = 0.1; // Lerp factor for smooth turning
+        const HISTORY_SPACING = 8; // Frames between body segments (controls tightness of trailing body)
+        const SNAKE_RADIUS = 12;
+        const FOOD_RADIUS = 6;
+        const FOOD_COUNT = 30;
+        const SAFE_BODY_SEGMENTS = 10; // First N segments don't trigger self-collision
+
+        // --- GAME VARIABLES ---
+        let canvas, ctx;
+        let animationId;
+        let score = 0;
+        let highScore = localStorage.getItem("slitherHighScore") || 0;
+        let isGameOver = false;
+
+        // Mouse/Touch target (relative to screen center where snake head is drawn)
+        let targetAngle = 0;
+        let mouseX = 0, mouseY = 0;
+
+        // Snake properties
+        let snake = {
+            x: WORLD_SIZE / 2,
+            y: WORLD_SIZE / 2,
+            angle: 0, // Current moving angle
+            history: [], // Array of previous positions: {x, y} (Path history for body trailing)
+            length: 10 // Initial body segments (not counting head)
+        };
+
+        let foods = [];
+
+        // --- DOM ELEMENTS ---
+        const scoreEl = document.getElementById("score");
+        const highScoreEl = document.getElementById("highScore");
+        const gameOverEl = document.getElementById("gameOver");
+        const finalScoreEl = document.getElementById("finalScore");
+        const restartBtn = document.getElementById("restartBtn");
+
+        // --- INITIALIZATION ---
+        function init() {
+            canvas = document.getElementById("gameCanvas");
+            ctx = canvas.getContext("2d");
+
+            // Resize canvas to window
+            window.addEventListener("resize", resizeCanvas);
+            resizeCanvas();
+
+            // Input events for mouse and touch (no click required, just position)
+            window.addEventListener("mousemove", (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                updateTargetAngle();
+            });
+            window.addEventListener("touchmove", (e) => {
+                mouseX = e.touches[0].clientX;
+                mouseY = e.touches[0].clientY;
+                updateTargetAngle();
+            });
+
+            restartBtn.addEventListener("click", resetGame);
+
+            highScoreEl.innerText = highScore;
+            resetGame();
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Update target angle on resize since canvas center moved
+            updateTargetAngle();
+        }
+
+        function updateTargetAngle() {
+            // Mouse coordinates relative to screen center (where the snake head is drawn)
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const dx = mouseX - centerX;
+            const dy = mouseY - centerY;
+
+            // Calculate angle to mouse/touch
+            if (dx !== 0 || dy !== 0) {
+                targetAngle = Math.atan2(dy, dx);
+            }
+        }
+
+        function resetGame() {
+            score = 0;
+            scoreEl.innerText = score;
+            isGameOver = false;
+            gameOverEl.style.display = "none";
+
+            snake = {
+                x: WORLD_SIZE / 2,
+                y: WORLD_SIZE / 2,
+                angle: 0,
+                history: [],
+                length: 10
+            };
+            targetAngle = 0;
+
+            // Pre-fill path history so body is drawn immediately on start
+            for (let i = 0; i < snake.length * HISTORY_SPACING + 1; i++) {
+                snake.history.push({x: snake.x, y: snake.y});
+            }
+
+            foods = [];
+            for (let i = 0; i < FOOD_COUNT; i++) {
+                spawnFood();
+            }
+
+            cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function spawnFood() {
+            let x, y;
+            let valid = false;
+            while (!valid) {
+                x = Math.random() * WORLD_SIZE;
+                y = Math.random() * WORLD_SIZE;
+                // Ensure food is not spawned too close to the snake's head
+                const distToHead = Math.hypot(x - snake.x, y - snake.y);
+                if (distToHead > 300) {
+                    valid = true;
+                }
+            }
+            foods.push({x, y});
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("slitherHighScore", highScore);
+                highScoreEl.innerText = highScore;
+            }
+            finalScoreEl.innerText = score;
+            gameOverEl.style.display = "block";
+        }
+
+        // --- MATH HELPERS ---
+        // Helper to lerp angles smoothly (shortest path)
+        function lerpAngle(a, b, t) {
+            let diff = b - a;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            return a + diff * t;
+        }
+
+        // --- MAIN GAME LOOP ---
+        function gameLoop() {
+            if (isGameOver) return;
+
+            update();
+            draw();
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // --- UPDATE LOGIC ---
+        function update() {
+            // 1. Smoothly rotate the snake head towards the target angle (mouse pos)
+            snake.angle = lerpAngle(snake.angle, targetAngle, TURN_SPEED);
+
+            // 2. Move head at constant speed in the direction of snake.angle
+            snake.x += Math.cos(snake.angle) * SNAKE_SPEED;
+            snake.y += Math.sin(snake.angle) * SNAKE_SPEED;
+
+            // 3. Record position history for trailing body
+            // Add new position to front of history
+            snake.history.unshift({x: snake.x, y: snake.y});
+            // Remove old history points we no longer need (keeps memory usage low)
+            const maxHistory = snake.length * HISTORY_SPACING + 1;
+            if (snake.history.length > maxHistory) {
+                snake.history.length = maxHistory;
+            }
+
+            // 4. Boundary Collision (2000x2000 limit)
+            if (snake.x < 0 || snake.x > WORLD_SIZE || snake.y < 0 || snake.y > WORLD_SIZE) {
+                gameOver();
+            }
+
+            // 5. Food Collision
+            for (let i = foods.length - 1; i >= 0; i--) {
+                const f = foods[i];
+                const dist = Math.hypot(snake.x - f.x, snake.y - f.y);
+                // Simple circle collision
+                if (dist < SNAKE_RADIUS + FOOD_RADIUS) {
+                    foods.splice(i, 1); // Remove eaten food
+                    score += 10;
+                    scoreEl.innerText = score;
+                    snake.length++; // Tail grows
+                    spawnFood(); // Respawn a new food dot
+                }
+            }
+
+            // 6. Self-Collision
+            // Ignore the first SAFE_BODY_SEGMENTS to avoid immediate self-overlap from tight turns
+            for (let i = SAFE_BODY_SEGMENTS; i < snake.length; i++) {
+                let historyIndex = i * HISTORY_SPACING;
+                if (historyIndex < snake.history.length) {
+                    let segment = snake.history[historyIndex];
+                    let dist = Math.hypot(snake.x - segment.x, snake.y - segment.y);
+                    if (dist < SNAKE_RADIUS * 1.5) { // Head hits body (using 1.5 multiplier for slightly forgiving hitbox)
+                        gameOver();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // --- DRAW LOGIC ---
+        function draw() {
+            // Clear entire canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Camera setup: translate world to keep the snake's head at center
+            ctx.save();
+            ctx.translate(canvas.width / 2 - snake.x, canvas.height / 2 - snake.y);
+
+            // 2. Draw Background Grid
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            // Vertical lines
+            for (let x = 0; x <= WORLD_SIZE; x += GRID_SIZE) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, WORLD_SIZE);
+            }
+            // Horizontal lines
+            for (let y = 0; y <= WORLD_SIZE; y += GRID_SIZE) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(WORLD_SIZE, y);
+            }
+            ctx.stroke();
+
+            // 3. Draw World Boundaries (Red border for visibility)
+            ctx.strokeStyle = "#ff3333";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+            // 4. Draw Food (Orange-red dots)
+            ctx.fillStyle = "#ff5500";
+            foods.forEach(f => {
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, FOOD_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 5. Draw Snake Body (from tail to head to ensure correct overlapping/z-index)
+            ctx.fillStyle = "#00aa55";
+            for (let i = snake.length - 1; i >= 0; i--) {
+                let historyIndex = i * HISTORY_SPACING;
+                // If history exists for this segment, draw it
+                if (historyIndex < snake.history.length) {
+                    let segment = snake.history[historyIndex];
+                    ctx.beginPath();
+                    ctx.arc(segment.x, segment.y, SNAKE_RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Dark outline to distinguish body segments
+                    ctx.strokeStyle = "rgba(0,0,0,0.3)";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+
+            // 6. Draw Snake Head (on top of body)
+            ctx.fillStyle = "#00ff88"; // Neon green
+            ctx.beginPath();
+            ctx.arc(snake.x, snake.y, SNAKE_RADIUS + 2, 0, Math.PI * 2); // Head slightly larger than body
+            ctx.fill();
+            ctx.strokeStyle = "#fff"; // White outline for head
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Optional: Draw simple eyes to show rotation direction
+            ctx.fillStyle = "black";
+            const eyeOffsetDist = SNAKE_RADIUS / 2;
+            const eyeAngleOffset = Math.PI / 4; // 45 degrees
+            // Right eye
+            let rx = snake.x + Math.cos(snake.angle + eyeAngleOffset) * eyeOffsetDist;
+            let ry = snake.y + Math.sin(snake.angle + eyeAngleOffset) * eyeOffsetDist;
+            ctx.beginPath();
+            ctx.arc(rx, ry, 2, 0, Math.PI * 2);
+            ctx.fill();
+            // Left eye
+            let lx = snake.x + Math.cos(snake.angle - eyeAngleOffset) * eyeOffsetDist;
+            let ly = snake.y + Math.sin(snake.angle - eyeAngleOffset) * eyeOffsetDist;
+            ctx.beginPath();
+            ctx.arc(lx, ly, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Restore canvas context, clearing the camera translation
+            ctx.restore();
+        }
+
+        // Start the game!
+        init();
+    </script>
+</body>
+</html>
