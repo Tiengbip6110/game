@@ -3,322 +3,617 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>slither.io</title>
+    <title>slither.io - Enhanced Edition</title>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0e1114;
-            font-family: Arial, sans-serif;
-            touch-action: none;
-            user-select: none;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #0e1114;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            touch-action: none; user-select: none;
         }
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
 
         /* UI Layers */
         #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-            color: white;
-            text-shadow: 1px 1px 2px black;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10; color: white; text-shadow: 1px 1px 2px black;
         }
+        .interactive { pointer-events: auto; }
+        .hidden { display: none !important; }
 
-        /* Interactive Overlay Elements */
-        .interactive {
-            pointer-events: auto;
-        }
-
-        /* --- Menu Screen --- */
-        #menu-screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-color: rgba(14, 17, 20, 0.5); /* Dimmed background */
-            z-index: 20;
-        }
-        #menu-title {
-            font-size: 80px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 0 20px #0f0, 2px 2px 5px #000;
-            margin-bottom: 5px;
-        }
-        #menu-subtitle {
-            font-size: 20px;
-            color: #ccc;
-            margin-bottom: 30px;
-        }
-        #nickname-input {
-            width: 300px;
-            padding: 15px;
-            font-size: 20px;
-            border: 2px solid #555;
-            border-radius: 25px;
-            background-color: #222;
-            color: white;
-            text-align: center;
-            outline: none;
-            margin-bottom: 20px;
-            box-shadow: inset 0 0 10px #000;
-        }
-        #nickname-input:focus {
-            border-color: #0f0;
-        }
-        #play-btn {
-            background-color: #4CAF50;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 15px 50px;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        /* Generic Buttons */
+        .btn {
+            background: linear-gradient(180deg, #4CAF50, #2E7D32);
+            color: white; font-weight: bold; border: 2px solid #81C784; border-radius: 20px;
+            padding: 10px 20px; cursor: pointer; text-shadow: 1px 1px 2px black; box-shadow: 0 4px 6px rgba(0,0,0,0.5);
             transition: transform 0.1s;
         }
-        #play-btn:active {
-            transform: scale(0.95);
-        }
-        #highscore-display {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 20px;
-            color: #ffeb3b;
-        }
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { filter: grayscale(100%); cursor: not-allowed; }
 
-        /* --- In-Game UI --- */
-        #in-game-ui {
-            display: none;
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+        /* Menu Screen */
+        #menu-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background-color: rgba(14, 17, 20, 0.7); z-index: 20;
         }
-        #top-left-info {
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            font-size: 14px; /* Reduced from 18px */
-            font-weight: bold;
+        #menu-title { font-size: 70px; font-weight: bold; color: #fff; text-shadow: 0 0 20px #0f0, 2px 2px 5px #000; margin-bottom: 5px; }
+        #menu-subtitle { font-size: 18px; color: #ccc; margin-bottom: 20px; }
+
+        .top-stats { position: absolute; top: 20px; left: 20px; font-size: 18px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px solid #555; }
+        .stat-line { margin: 5px 0; }
+        .rwc-text { color: #ffeb3b; font-weight: bold; text-shadow: 0 0 5px #ff9800; }
+        .coin-text { color: #4CAF50; font-weight: bold; }
+        .lvl-text { color: #03A9F4; font-weight: bold; }
+
+        #nickname-input {
+            width: 250px; padding: 12px; font-size: 18px; border: 2px solid #555; border-radius: 20px;
+            background-color: #222; color: white; text-align: center; outline: none; margin-bottom: 20px;
         }
-        #player-name-display {
-            position: absolute;
-            top: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 20px; /* Reduced from 24px */
-            font-weight: bold;
-            color: rgba(255, 255, 255, 0.8);
+        #nickname-input:focus { border-color: #0f0; }
+
+        .menu-btns { display: flex; gap: 15px; margin-top: 15px; }
+        #play-btn { font-size: 28px; padding: 15px 50px; border-radius: 30px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 20px #4CAF50; } 100% { transform: scale(1); } }
+
+        /* Modals */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 30; display: flex; justify-content: center; align-items: center;
         }
-        #server-info {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            font-size: 12px; /* Reduced from 16px */
-            color: #aaa;
+        .modal {
+            background: #222; border: 2px solid #555; border-radius: 15px; width: 80%; max-width: 600px; max-height: 80%;
+            display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,1);
         }
+        .modal-header { background: #333; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444;}
+        .modal-header h2 { margin: 0; font-size: 24px; color: #fff; }
+        .close-btn { background: #f44336; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        .modal-content { padding: 15px; overflow-y: auto; flex-grow: 1; }
+
+        /* Shop Tabs */
+        .shop-tabs { display: flex; background: #111; }
+        .tab-btn { flex: 1; padding: 10px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: #fff; border-bottom: 3px solid #4CAF50; background: #222; }
+
+        /* Item Cards */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .card { background: #333; border: 1px solid #555; border-radius: 10px; padding: 10px; text-align: center; }
+        .card h4 { margin: 0 0 5px 0; color: #fff; font-size: 14px; }
+        .card .desc { font-size: 11px; color: #aaa; margin-bottom: 10px; min-height: 30px;}
+        .card .price { font-size: 12px; margin-bottom: 10px; font-weight: bold; }
+
+        /* Quest List */
+        .quest-item { background: #333; border: 1px solid #555; border-radius: 8px; padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .quest-info h4 { margin: 0 0 5px 0; color: #fff; }
+        .quest-reward { font-size: 12px; color: #ffeb3b; }
+        .quest-progress { background: #111; border-radius: 10px; height: 10px; width: 100%; margin-top: 5px; overflow: hidden; }
+        .quest-bar { background: #4CAF50; height: 100%; width: 0%; transition: width 0.3s; }
+        .quest-status { font-size: 12px; font-weight: bold; color: #888;}
+        .quest-status.done { color: #4CAF50; }
+
+        /* In-Game UI */
+        #in-game-ui { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #top-left-info { position: absolute; top: 10px; left: 20px; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 5px;}
+        #player-name-display { position: absolute; top: 10px; width: 100%; text-align: center; font-size: 20px; font-weight: bold; color: rgba(255, 255, 255, 0.8); }
+        #server-info { position: absolute; top: 10px; right: 20px; font-size: 12px; color: #aaa; }
 
         #leaderboard-panel {
-            position: absolute;
-            top: 30px;
-            right: 20px;
-            width: 110px; /* Reduced from 220px */
-            background-color: rgba(0, 0, 0, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            padding: 8px;
-            font-size: 12px; /* Reduced from 16px */
+            position: absolute; top: 30px; right: 20px; width: 130px; background-color: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 10px; padding: 8px; font-size: 12px;
         }
-        #leaderboard-panel h3 {
-            margin: 0 0 8px 0;
-            text-align: center;
-            font-size: 14px; /* Reduced from 18px */
-            color: #fff;
-        }
-        #leaderboard-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        #leaderboard-list li {
-            margin-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .lb-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 60px; /* Reduced to fit smaller width */
-        }
+        #leaderboard-panel h3 { margin: 0 0 8px 0; text-align: center; font-size: 14px; color: #fff; }
+        #leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        #leaderboard-list li { margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .lb-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
 
         #minimap-container {
-            position: absolute;
-            bottom: 60px;
-            right: 20px;
-            width: 60px; /* Reduced from 120px */
-            height: 60px; /* Reduced from 120px */
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            background-color: rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            z-index: 10;
-            pointer-events: none;
+            position: absolute; bottom: 15px; right: 15px; width: 80px; height: 80px;
+            border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; background-color: rgba(0, 0, 0, 0.5);
+            overflow: hidden; z-index: 10; pointer-events: none;
         }
-        #minimap {
-            width: 100%;
-            height: 100%;
-        }
+        #minimap { width: 100%; height: 100%; }
 
-        /* --- Game Over Screen --- */
+        /* Mobile Controls */
+        #joystick-area {
+            position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px;
+            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
+            display: none; /* hidden on desktop by default */ justify-content: center; align-items: center; z-index: 15;
+        }
+        #joystick-knob { width: 40px; height: 40px; background: rgba(255,255,255,0.5); border-radius: 50%; position: absolute; pointer-events: none;}
+
+        #boost-btn-mobile {
+            position: absolute; bottom: 120px; right: 20px; width: 70px; height: 70px;
+            background: rgba(255,0,0,0.4); border: 2px solid rgba(255,100,100,0.6); border-radius: 50%;
+            display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; z-index: 15;
+        }
+        #boost-btn-mobile:active { background: rgba(255,0,0,0.7); }
+
+        /* Powerups Bar */
+        #powerup-bar {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 15;
+        }
+        .pu-btn {
+            width: 50px; height: 50px; border-radius: 10px; background: rgba(0,0,0,0.6); border: 2px solid #555;
+            color: white; font-weight: bold; position: relative; display: flex; justify-content: center; align-items: center;
+            font-size: 11px; text-align: center; line-height: 1.1; cursor: pointer;
+        }
+        .pu-btn.active-pu { border-color: #0f0; box-shadow: 0 0 10px #0f0; }
+        .pu-count { position: absolute; top: -5px; right: -5px; background: #E91E63; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; justify-content: center; align-items: center;}
+
+        /* Game Over */
         #game-over-screen {
-            display: none;
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 30;
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            flex-direction: column; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.85); z-index: 30;
         }
-        #game-over-title {
-            font-size: 60px;
-            font-weight: bold;
-            color: #ff3333;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px #f00;
-        }
-        #final-score {
-            font-size: 30px;
-            color: white;
-            margin-bottom: 40px;
-        }
-        .btn-group {
-            display: flex;
-            gap: 20px;
-        }
-        .go-btn {
-            background-color: #555;
-            color: white;
-            font-size: 20px;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
-        }
-        .go-btn.primary {
-            background-color: #4CAF50;
-        }
-        .go-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* --- Common Bottom Text --- */
-        #bottom-text {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 14px;
-            color: #888;
-            z-index: 40;
-        }
-        #bottom-text a {
-            color: #4CAF50;
-            text-decoration: none;
-            cursor: pointer;
-            pointer-events: auto;
-        }
-
-        #small-logo {
-            position: absolute;
-            bottom: 30px;
-            width: 100%;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: rgba(255,255,255,0.2);
-            pointer-events: none;
-            z-index: 40;
-        }
+        #game-over-title { font-size: 60px; font-weight: bold; color: #ff3333; margin-bottom: 10px; text-shadow: 0 0 10px #f00; }
+        .go-stat { font-size: 20px; color: white; margin-bottom: 5px; }
+        .go-highlight { color: #ffeb3b; font-weight: bold; font-size: 24px; margin: 15px 0;}
     </style>
 </head>
 <body>
-    <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
 
-    <!-- UI Overlay -->
     <div id="ui-layer">
-
-        <!-- Minimap -->
-        <div id="minimap-container" style="display: none;">
-            <canvas id="minimap"></canvas>
-        </div>
-
-        <!-- Common Elements -->
-        <div id="small-logo">slither.io</div>
-        <div id="bottom-text">
-            The website might not work well on your device, so <a id="fake-app-link" class="interactive">Tap here to download the app!</a>
-        </div>
-
-        <!-- Menu Screen -->
+        <!-- Main Menu -->
         <div id="menu-screen" class="interactive">
-            <div id="highscore-display">Your High Score: <span id="hs-val">0</span></div>
+            <div class="top-stats">
+                <div class="stat-line lvl-text">Level: <span id="ui-lvl">1</span> (<span id="ui-exp">0</span>/100)</div>
+                <div class="stat-line coin-text">Coins: <span id="ui-coins">0</span></div>
+                <div class="stat-line rwc-text">Rainbow Coins: <span id="ui-rwc">0</span></div>
+            </div>
             <div id="menu-title">slither.io</div>
-            <div id="menu-subtitle">Eat to grow longer!</div>
+            <div id="menu-subtitle">Enhanced Edition</div>
             <input type="text" id="nickname-input" placeholder="Nickname" maxlength="24">
-            <button id="play-btn">Play</button>
+            <button id="play-btn" class="btn">Play</button>
+            <div class="menu-btns">
+                <button id="shop-btn" class="btn">SHOP</button>
+                <button id="quests-btn" class="btn">QUESTS</button>
+            </div>
         </div>
 
         <!-- In-Game UI -->
         <div id="in-game-ui">
             <div id="top-left-info">
-                Your length: <span id="ui-length">0</span><br>
-                Your rank: <span id="ui-rank">0</span> of <span id="ui-total">0</span>
+                Length: <span id="ig-length">0</span><br>
+                Rank: <span id="ig-rank">0</span>/<span id="ig-total">0</span><br>
+                <span class="coin-text">Coins: <span id="ig-coins">0</span></span>
             </div>
             <div id="player-name-display">Name</div>
             <div id="server-info">server <span id="server-id">0000</span></div>
 
             <div id="leaderboard-panel">
                 <h3>Leaderboard</h3>
-                <ul id="leaderboard-list">
-                    <!-- populated dynamically -->
-                </ul>
+                <ul id="leaderboard-list"></ul>
+            </div>
+
+            <div id="minimap-container"><canvas id="minimap"></canvas></div>
+
+            <div id="joystick-area" class="interactive"><div id="joystick-knob"></div></div>
+            <div id="boost-btn-mobile" class="interactive">BOOST</div>
+
+            <div id="powerup-bar" class="interactive">
+                <div class="pu-btn" id="pu-0" onclick="usePowerup(0)">x3<br>Food<div class="pu-count" id="pu-count-0">0</div></div>
+                <div class="pu-btn" id="pu-1" onclick="usePowerup(1)">x3<br>Speed<div class="pu-count" id="pu-count-1">0</div></div>
+                <div class="pu-btn" id="pu-2" onclick="usePowerup(2)">God<br>Mode<div class="pu-count" id="pu-count-2">0</div></div>
+                <div class="pu-btn" id="pu-3" onclick="usePowerup(3)">Zoom<br>View<div class="pu-count" id="pu-count-3">0</div></div>
             </div>
         </div>
 
         <!-- Game Over Screen -->
         <div id="game-over-screen" class="interactive">
             <div id="game-over-title">YOU DIED</div>
-            <div id="final-score">Final Length: <span id="go-score">0</span></div>
-            <div class="btn-group">
-                <button id="btn-menu" class="go-btn">BACK TO MENU</button>
-                <button id="btn-play-again" class="go-btn primary">PLAY AGAIN</button>
+            <div class="go-stat">Final Length: <span id="go-score">0</span></div>
+            <div class="go-stat">EXP Gained: <span id="go-exp">0</span></div>
+            <div class="go-stat">Coins Earned: <span id="go-coins">0</span></div>
+            <div id="go-bonus" class="go-stat" style="color:#4CAF50"></div>
+            <div id="go-levelup" class="go-highlight hidden">LEVEL UP! +50 Coins</div>
+            <div id="go-rwc" class="go-highlight hidden">BONUS RAINBOW COIN!</div>
+            <div class="menu-btns" style="margin-top: 30px;">
+                <button id="btn-menu" class="btn" style="background:#555;border-color:#777">MAIN MENU</button>
+                <button id="btn-play-again" class="btn">PLAY AGAIN</button>
             </div>
         </div>
 
+        <!-- Modals -->
+        <div id="shop-modal" class="modal-overlay hidden interactive">
+            <div class="modal">
+                <div class="modal-header"><h2>SHOP</h2><button class="close-btn" onclick="closeModals()">X</button></div>
+                <div class="shop-tabs">
+                    <button class="tab-btn active" onclick="switchShopTab('skins')">SKINS</button>
+                    <button class="tab-btn" onclick="switchShopTab('powerups')">POWER-UPS</button>
+                </div>
+                <div class="modal-content" id="shop-content-skins" style="background:#111;">
+                    <div class="grid-container" id="skins-grid"></div>
+                </div>
+                <div class="modal-content hidden" id="shop-content-powerups" style="background:#111;">
+                    <div class="grid-container" id="powerups-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="quests-modal" class="modal-overlay hidden interactive">
+            <div class="modal">
+                <div class="modal-header"><h2>QUESTS</h2><button class="close-btn" onclick="closeModals()">X</button></div>
+                <div class="modal-content" id="quests-list" style="background:#111;"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        (function() {
-            // --- CONSTANTS & CONFIG ---
+(function() {
+    // --- DATA & STORAGE SYSTEM ---
+    const DB_KEY = 'slitherEnhancedDB';
+
+    // Default Database Structure
+    let db = {
+        coins: 0,
+        rwc: 0,
+        level: 1,
+        exp: 0,
+        nickname: "FreeBabysittingCallTrump",
+        equippedSkin: 0,
+        ownedSkins: [0], // always own skin 0
+        powerups: [0, 0, 0, 0], // counts for 4 powerups
+        playTime: 0, // seconds
+        quests: [
+            { id: 0, current: 0, done: false }, // Eat 50 food
+            { id: 1, current: 0, done: false }, // Eat 200 food
+            { id: 2, current: 0, done: false }, // Reach length 100
+            { id: 3, current: 0, done: false }, // Reach length 500
+            { id: 4, current: 0, done: false }, // Play 30 mins (1800s)
+            { id: 5, current: 0, done: false }, // Eat 10 super food
+            { id: 6, current: 0, done: false }, // Eat 50 super food
+            { id: 7, current: 0, done: false }  // Use powerup 5 times
+        ]
+    };
+
+    function loadDB() {
+        try {
+            const saved = localStorage.getItem(DB_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Merge to ensure new fields are added to old saves
+                db = { ...db, ...parsed };
+                // ensure nested arrays are correctly merged/sized
+                if (!db.ownedSkins.includes(0)) db.ownedSkins.push(0);
+                while(db.powerups.length < 4) db.powerups.push(0);
+                if (db.quests.length < 8) {
+                     // Basic migration if needed
+                     let newQ = [
+                        { id: 0, current: 0, done: false }, { id: 1, current: 0, done: false },
+                        { id: 2, current: 0, done: false }, { id: 3, current: 0, done: false },
+                        { id: 4, current: 0, done: false }, { id: 5, current: 0, done: false },
+                        { id: 6, current: 0, done: false }, { id: 7, current: 0, done: false }
+                     ];
+                     for(let i=0; i<db.quests.length; i++) newQ[i] = db.quests[i];
+                     db.quests = newQ;
+                }
+            }
+        } catch (e) { console.error("Could not load DB", e); }
+    }
+
+    function saveDB() {
+        try { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+        catch (e) { console.error("Could not save DB", e); }
+    }
+
+    // Expose for debugging if needed
+    window.SLITHER_DB = db;
+
+    // Boot
+    loadDB();
+    saveDB();
+
+    // --- DEFINITIONS ---
+    const SKINS_DATA = [
+        { id: 0, name: "Xanh Neon", cPrice: 0, rPrice: 0, bonus: 0, hue: 120, pattern: 'solid' },
+        { id: 1, name: "Đỏ Lửa", cPrice: 100, rPrice: 0, bonus: 0, hue: 0, pattern: 'solid' },
+        { id: 2, name: "Vàng Kim", cPrice: 150, rPrice: 0, bonus: 0, hue: 50, pattern: 'solid' },
+        { id: 3, name: "Tím Huyền Bí", cPrice: 200, rPrice: 0, bonus: 0, hue: 270, pattern: 'solid' },
+        { id: 4, name: "Xanh Băng", cPrice: 250, rPrice: 0, bonus: 0, hue: 180, pattern: 'solid' },
+        { id: 5, name: "Hồng Cute", cPrice: 300, rPrice: 0, bonus: 0, hue: 320, pattern: 'solid' },
+        { id: 6, name: "Đen Huyền Thoại", cPrice: 400, rPrice: 0, bonus: 0, hue: 0, pattern: 'dark' },
+        { id: 7, name: "Trắng Tinh Khôi", cPrice: 500, rPrice: 0, bonus: 0, hue: 0, pattern: 'light' },
+        { id: 8, name: "Cam Cháy", cPrice: 500, rPrice: 0, bonus: 0, hue: 25, pattern: 'solid' },
+        { id: 9, name: "Lục Giác", cPrice: 1000, rPrice: 1, bonus: 2, hue: 150, pattern: 'hex' },
+        { id: 10, name: "Cầu Vồng", cPrice: 1500, rPrice: 2, bonus: 3, hue: 0, pattern: 'rainbow' },
+        { id: 11, name: "Kim Cương", cPrice: 2000, rPrice: 3, bonus: 4, hue: 200, pattern: 'diamond' },
+        { id: 12, name: "Bạch Kim", cPrice: 2500, rPrice: 4, bonus: 5, hue: 0, pattern: 'platinum' },
+        { id: 13, name: "Rồng Xanh", cPrice: 3000, rPrice: 5, bonus: 6, hue: 220, pattern: 'dragon' },
+        { id: 14, name: "Phượng Hoàng", cPrice: 3500, rPrice: 6, bonus: 7, hue: 10, pattern: 'phoenix' },
+        { id: 15, name: "Hổ Vằn", cPrice: 4000, rPrice: 7, bonus: 8, hue: 35, pattern: 'tiger' },
+        { id: 16, name: "Báo Đen", cPrice: 4500, rPrice: 8, bonus: 9, hue: 0, pattern: 'panther' },
+        { id: 17, name: "Ngọc Lục Bảo", cPrice: 5000, rPrice: 9, bonus: 10, hue: 140, pattern: 'emerald' },
+        { id: 18, name: "San Hô", cPrice: 5000, rPrice: 10, bonus: 10, hue: 350, pattern: 'coral' },
+        { id: 19, name: "Thạch Anh", cPrice: 5000, rPrice: 10, bonus: 10, hue: 290, pattern: 'quartz' }
+    ];
+
+    const POWERUPS_DATA = [
+        { id: 0, name: "x3-x5 Food", desc: "Mỗi mồi nhân 3-5 lần chiều dài trong 60s.", cPrice: 500 },
+        { id: 1, name: "Speed Boost", desc: "Tốc độ x3-x5 trong 90s, KHÔNG bị trừ điểm.", cPrice: 600 },
+        { id: 2, name: "God Mode", desc: "Bất tử, đi xuyên rắn khác trong 30s.", cPrice: 1000 },
+        { id: 3, name: "Eagle Eye", desc: "Mở rộng góc nhìn 250% trong 90s.", cPrice: 700 }
+    ];
+
+    const QUESTS_DATA = [
+        { id: 0, desc: "Ăn 50 mồi thường", target: 50, rewardC: 200, rewardR: 1 },
+        { id: 1, desc: "Ăn 200 mồi thường", target: 200, rewardC: 500, rewardR: 2 },
+        { id: 2, desc: "Đạt kích thước 100", target: 100, rewardC: 300, rewardR: 1 },
+        { id: 3, desc: "Đạt kích thước 500", target: 500, rewardC: 800, rewardR: 3 },
+        { id: 4, desc: "Chơi 30 phút (tích lũy)", target: 1800, rewardC: 400, rewardR: 1 },
+        { id: 5, desc: "Ăn 10 mồi siêu cấp", target: 10, rewardC: 600, rewardR: 2 },
+        { id: 6, desc: "Ăn 50 mồi siêu cấp", target: 50, rewardC: 1500, rewardR: 5 },
+        { id: 7, desc: "Sử dụng 5 Power-up", target: 5, rewardC: 500, rewardR: 1 }
+    ];
+
+    // --- UI MODALS LOGIC ---
+    function updateHeaderStats() {
+        document.getElementById('ui-lvl').innerText = db.level;
+        document.getElementById('ui-exp').innerText = Math.floor(db.exp);
+        document.getElementById('ui-coins').innerText = db.coins;
+        document.getElementById('ui-rwc').innerText = db.rwc;
+    }
+
+    function renderSkinsShop() {
+        const grid = document.getElementById('skins-grid');
+        grid.innerHTML = '';
+        SKINS_DATA.forEach(skin => {
+            const isOwned = db.ownedSkins.includes(skin.id);
+            const isEquipped = db.equippedSkin === skin.id;
+
+            let btnHtml = '';
+            if (isEquipped) {
+                btnHtml = `<button class="btn" disabled style="width:100%; padding:5px;">EQUIPPED</button>`;
+            } else if (isOwned) {
+                btnHtml = `<button class="btn" style="width:100%; padding:5px; background:linear-gradient(180deg,#2196F3,#1565C0); border-color:#64B5F6" onclick="equipSkin(${skin.id})">EQUIP</button>`;
+            } else {
+                let priceText = `${skin.cPrice}C`;
+                if (skin.rPrice > 0) priceText += ` + ${skin.rPrice}R`;
+                btnHtml = `<button class="btn" style="width:100%; padding:5px; font-size:12px;" onclick="buySkin(${skin.id})">BUY (${priceText})</button>`;
+            }
+
+            let bonusText = skin.bonus > 0 ? `<div class="desc" style="color:#4CAF50">+${skin.bonus}% Score</div>` : `<div class="desc">No bonus</div>`;
+
+            grid.innerHTML += `
+                <div class="card" style="border-color: ${isEquipped ? '#0f0' : '#555'}">
+                    <div style="height:40px; margin-bottom:10px; border-radius:5px; background:hsl(${skin.hue}, 100%, 50%); display:flex; justify-content:center; align-items:center; font-weight:bold; color:black; text-shadow:0 0 2px white;">Preview</div>
+                    <h4>${skin.name}</h4>
+                    ${bonusText}
+                    ${btnHtml}
+                </div>
+            `;
+        });
+    }
+
+    window.equipSkin = function(id) {
+        db.equippedSkin = id;
+        saveDB();
+        renderSkinsShop();
+    };
+
+    window.buySkin = function(id) {
+        const skin = SKINS_DATA.find(s => s.id === id);
+        if (db.coins >= skin.cPrice && db.rwc >= skin.rPrice) {
+            db.coins -= skin.cPrice;
+            db.rwc -= skin.rPrice;
+            db.ownedSkins.push(id);
+            db.equippedSkin = id;
+            saveDB();
+            updateHeaderStats();
+            renderSkinsShop();
+        } else {
+            alert("Not enough Coins or RWC!");
+        }
+    };
+
+    function renderPowerupsShop() {
+        const grid = document.getElementById('powerups-grid');
+        grid.innerHTML = '';
+        POWERUPS_DATA.forEach(pu => {
+            const count = db.powerups[pu.id];
+            const maxed = count >= 3;
+
+            grid.innerHTML += `
+                <div class="card">
+                    <h4>${pu.name}</h4>
+                    <div class="desc">${pu.desc}</div>
+                    <div class="price" style="color:#4CAF50">${pu.cPrice} Coins</div>
+                    <div style="font-size:12px; margin-bottom:5px;">Owned: ${count}/3</div>
+                    <button class="btn" style="width:100%; padding:5px;" ${maxed ? 'disabled' : ''} onclick="buyPowerup(${pu.id})">${maxed ? 'MAXED' : 'BUY'}</button>
+                </div>
+            `;
+        });
+    }
+
+    window.buyPowerup = function(id) {
+        const pu = POWERUPS_DATA.find(p => p.id === id);
+        if (db.powerups[id] < 3 && db.coins >= pu.cPrice) {
+            db.coins -= pu.cPrice;
+            db.powerups[id]++;
+            saveDB();
+            updateHeaderStats();
+            renderPowerupsShop();
+        } else if (db.coins < pu.cPrice) {
+            alert("Not enough Coins!");
+        }
+    };
+
+    function renderQuests() {
+        const list = document.getElementById('quests-list');
+        list.innerHTML = '';
+        QUESTS_DATA.forEach(qData => {
+            const qState = db.quests.find(q => q.id === qData.id);
+            let progress = Math.min(qState.current, qData.target);
+            let pct = (progress / qData.target) * 100;
+
+            let btnHtml = '';
+            let statusHtml = `<div class="quest-status">${progress}/${qData.target}</div>`;
+
+            if (qState.done) {
+                statusHtml = `<div class="quest-status done">COMPLETED</div>`;
+                pct = 100;
+            } else if (progress >= qData.target) {
+                btnHtml = `<button class="btn" style="padding: 5px 10px; font-size:12px;" onclick="claimQuest(${qData.id})">CLAIM</button>`;
+                statusHtml = '';
+            }
+
+            list.innerHTML += `
+                <div class="quest-item">
+                    <div class="quest-info" style="flex-grow: 1; margin-right: 15px;">
+                        <h4>${qData.desc}</h4>
+                        <div class="quest-reward">Reward: ${qData.rewardC}C + ${qData.rewardR}R</div>
+                        <div class="quest-progress"><div class="quest-bar" style="width: ${pct}%"></div></div>
+                    </div>
+                    <div style="min-width: 80px; text-align: right;">
+                        ${statusHtml}
+                        ${btnHtml}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    window.claimQuest = function(id) {
+        const qData = QUESTS_DATA.find(q => q.id === id);
+        const qState = db.quests.find(q => q.id === id);
+        if (qState.current >= qData.target && !qState.done) {
+            qState.done = true;
+            db.coins += qData.rewardC;
+            db.rwc += qData.rewardR;
+            saveDB();
+            updateHeaderStats();
+            renderQuests();
+            alert(`Claimed: ${qData.rewardC} Coins and ${qData.rewardR} RWC!`);
+        }
+    };
+
+    window.closeModals = function() {
+        document.getElementById('shop-modal').classList.add('hidden');
+        document.getElementById('quests-modal').classList.add('hidden');
+    };
+
+    window.switchShopTab = function(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('shop-content-skins').classList.add('hidden');
+        document.getElementById('shop-content-powerups').classList.add('hidden');
+
+        if (tab === 'skins') {
+            document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+            document.getElementById('shop-content-skins').classList.remove('hidden');
+            renderSkinsShop();
+        } else {
+            document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+            document.getElementById('shop-content-powerups').classList.remove('hidden');
+            renderPowerupsShop();
+        }
+    };
+
+    document.getElementById('shop-btn').addEventListener('click', () => {
+        document.getElementById('shop-modal').classList.remove('hidden');
+        switchShopTab('skins');
+    });
+
+    document.getElementById('quests-btn').addEventListener('click', () => {
+        document.getElementById('quests-modal').classList.remove('hidden');
+        renderQuests();
+    });
+
+    // --- JOYSTICK & MOBILE CONTROLS ---
+    let isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const joyArea = document.getElementById('joystick-area');
+    const joyKnob = document.getElementById('joystick-knob');
+    const boostBtnMobile = document.getElementById('boost-btn-mobile');
+
+    let joyActive = false;
+    let joyCenterX = 0;
+    let joyCenterY = 0;
+    let joyVector = { x: 0, y: 0 };
+
+    function initMobileControls() {
+        if (isTouchDevice) {
+            joyArea.style.display = 'flex';
+            boostBtnMobile.style.display = 'flex';
+        } else {
+            joyArea.style.display = 'none';
+            boostBtnMobile.style.display = 'none';
+        }
+    }
+
+    joyArea.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const rect = joyArea.getBoundingClientRect();
+        joyCenterX = rect.left + rect.width / 2;
+        joyCenterY = rect.top + rect.height / 2;
+        joyActive = true;
+        updateJoystick(e.touches[0]);
+    }, {passive: false});
+
+    joyArea.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (joyActive) updateJoystick(e.touches[0]);
+    }, {passive: false});
+
+    joyArea.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        joyActive = false;
+        joyKnob.style.transform = `translate(0px, 0px)`;
+        // Reset vector or keep last direction? Usually keep last direction is better for slither
+    }, {passive: false});
+
+    function updateJoystick(touch) {
+        let dx = touch.clientX - joyCenterX;
+        let dy = touch.clientY - joyCenterY;
+        const dist = Math.hypot(dx, dy);
+        const maxDist = 40; // max knob travel
+
+        if (dist > maxDist) {
+            dx = (dx / dist) * maxDist;
+            dy = (dy / dist) * maxDist;
+        }
+
+        joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+        // Normalize for game logic
+        if (dist > 0) {
+            joyVector.x = dx / maxDist;
+            joyVector.y = dy / maxDist;
+        }
+    }
+
+    // Export variables to be used by main game loop
+    window.SlitherInput = {
+        isTouch: isTouchDevice,
+        getJoyVector: () => joyVector,
+        isBoostingMobile: false
+    };
+
+    boostBtnMobile.addEventListener('touchstart', (e) => { e.preventDefault(); window.SlitherInput.isBoostingMobile = true; });
+    boostBtnMobile.addEventListener('touchend', (e) => { e.preventDefault(); window.SlitherInput.isBoostingMobile = false; });
+    boostBtnMobile.addEventListener('touchcancel', (e) => { e.preventDefault(); window.SlitherInput.isBoostingMobile = false; });
+
+    // Detect if mouse is used, hide mobile controls if they were shown by mistake
+    window.addEventListener('mousemove', () => {
+        if (isTouchDevice) {
+            isTouchDevice = false;
+            initMobileControls();
+            window.SlitherInput.isTouch = false;
+        }
+    }, {once: true});
+
+
+    // Boot Init
+    updateHeaderStats();
+    document.getElementById('nickname-input').value = db.nickname;
+    initMobileControls();
+
+
+
+            // Wait for DB to be ready
+
+
+
+            // --- CONFIG ---
             const CONFIG = {
                 MAP_RADIUS: 4000,
                 HEX_SIZE: 40,
@@ -326,35 +621,39 @@
                 GRID_COLOR: '#1a2024',
                 BOUNDARY_COLOR: 'rgba(255, 50, 50, 0.4)',
                 BASE_SPEED: 180,
-                BOOST_SPEED_MULTI: 1.8,
+                BOOST_SPEED_MULTI: 1.5,
                 TURN_SPEED: Math.PI * 1.5,
                 SNAKE_RADIUS: 16,
-                SPACING: 12, // Increased spacing to reduce segment count
+                SPACING: 12,
                 FOOD_RADIUS: 6,
-                MAX_FOOD: 600, // Reduced slightly to save performance
-                AI_COUNT: 15,
-                DEFAULT_NAME: "FreeBabysittingCallTrump"
+                MAX_FOOD: 600,
+                AI_COUNT: 15
             };
 
-            const AI_COLORS = [0, 30, 300, 270]; // Red, Orange, Pink, Purple (HSL hues)
-            const PLAYER_HUE = 120; // Neon Green
+            const AI_COLORS = [0, 30, 300, 270];
 
-            // --- GAME STATE ---
+            // --- STATE ---
             const state = {
-                phase: 'MENU', // MENU, PLAYING, GAMEOVER
-                camera: { x: 0, y: 0, zoom: 1 },
+                phase: 'MENU',
+                camera: { x: 0, y: 0, zoom: 1.3 }, // default zoom 130%
                 player: null,
                 ais: [],
                 foods: [],
                 mouseX: window.innerWidth / 2,
                 mouseY: window.innerHeight / 2,
-                isBoosting: false,
-                highScore: parseInt(localStorage.getItem('slitherHighScore')) || 0,
+                isMouseBoosting: false,
                 serverId: Math.floor(1000 + Math.random() * 9000),
-                nickname: CONFIG.DEFAULT_NAME
+
+                // Active Powerups
+                puFoodMulti: 1, // 1 normal, 3-5 if active
+                puFoodTimer: 0,
+                puSpeedMulti: 1, // 1 normal, 3-5 if active
+                puSpeedTimer: 0,
+                puGodTimer: 0,
+                puZoomTimer: 0
             };
 
-            // --- DOM ELEMENTS ---
+            // --- DOM ---
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d', { alpha: false });
             const minimapCanvas = document.getElementById('minimap');
@@ -367,13 +666,7 @@
                 minimap: document.getElementById('minimap-container')
             };
 
-            // --- UI HANDLERS ---
-            document.getElementById('hs-val').innerText = state.highScore;
             document.getElementById('server-id').innerText = state.serverId;
-
-            document.getElementById('fake-app-link').addEventListener('click', () => {
-                alert("App demo offline");
-            });
 
             function setPhase(newPhase) {
                 state.phase = newPhase;
@@ -384,40 +677,37 @@
 
                 if (newPhase === 'MENU') {
                     screens.menu.style.display = 'flex';
-                    // Optional: reset camera to center to watch map
                     state.camera.x = 0; state.camera.y = 0;
                 } else if (newPhase === 'PLAYING') {
                     screens.inGame.style.display = 'block';
                     screens.minimap.style.display = 'block';
+                    updatePowerupUI();
                 } else if (newPhase === 'GAMEOVER') {
                     screens.gameOver.style.display = 'flex';
                     screens.minimap.style.display = 'block';
-                    document.getElementById('go-score').innerText = Math.floor(state.player.score);
-
-                    if (state.player.score > state.highScore) {
-                        state.highScore = Math.floor(state.player.score);
-                        localStorage.setItem('slitherHighScore', state.highScore);
-                        document.getElementById('hs-val').innerText = state.highScore;
-                    }
                 }
             }
 
             function startGame() {
                 let inputName = document.getElementById('nickname-input').value.trim();
-                state.nickname = inputName || CONFIG.DEFAULT_NAME;
-                document.getElementById('player-name-display').innerText = state.nickname;
+                db.nickname = inputName || "Player";
+                document.getElementById('player-name-display').innerText = db.nickname;
 
-                // Clear state
                 state.ais = [];
                 state.foods = [];
 
-                // Initial food
+                // Clear active PUs
+                state.puFoodTimer = 0; state.puFoodMulti = 1;
+                state.puSpeedTimer = 0; state.puSpeedMulti = 1;
+                state.puGodTimer = 0;
+                state.puZoomTimer = 0;
+
                 for(let i=0; i<CONFIG.MAX_FOOD; i++) spawnFood();
 
-                // Spawn Player
-                state.player = new Snake(0, 0, PLAYER_HUE, state.nickname, true);
+                // Find equipped skin hue
+                // Assuming skin rendering logic will be added later, just pass ID for now
+                state.player = new Snake(0, 0, db.equippedSkin, db.nickname, true);
 
-                // Spawn AIs
                 for(let i=0; i<CONFIG.AI_COUNT; i++) spawnAI();
 
                 setPhase('PLAYING');
@@ -425,48 +715,65 @@
 
             document.getElementById('play-btn').addEventListener('click', startGame);
             document.getElementById('btn-play-again').addEventListener('click', startGame);
-            document.getElementById('btn-menu').addEventListener('click', () => {
-                setPhase('MENU');
-            });
+            document.getElementById('btn-menu').addEventListener('click', () => { setPhase('MENU'); });
 
             // --- INPUT ---
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', resize);
-            resize();
+            function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize); resize();
 
             window.addEventListener('mousemove', (e) => {
-                state.mouseX = e.clientX;
-                state.mouseY = e.clientY;
+                if (!SlitherInput.isTouch) {
+                    state.mouseX = e.clientX;
+                    state.mouseY = e.clientY;
+                }
             });
-            window.addEventListener('mousedown', (e) => {
-                if (e.button === 0) state.isBoosting = true;
-            });
-            window.addEventListener('mouseup', (e) => {
-                if (e.button === 0) state.isBoosting = false;
-            });
-            window.addEventListener('touchstart', (e) => {
-                state.mouseX = e.touches[0].clientX;
-                state.mouseY = e.touches[0].clientY;
-                state.isBoosting = true;
-            });
-            window.addEventListener('touchmove', (e) => {
-                state.mouseX = e.touches[0].clientX;
-                state.mouseY = e.touches[0].clientY;
-            });
-            window.addEventListener('touchend', (e) => {
-                state.isBoosting = false;
-            });
+            window.addEventListener('mousedown', (e) => { if (e.button === 0) state.isMouseBoosting = true; });
+            window.addEventListener('mouseup', (e) => { if (e.button === 0) state.isMouseBoosting = false; });
+
+            // --- POWERUPS ---
+            window.usePowerup = function(id) {
+                if (state.phase !== 'PLAYING') return;
+                if (db.powerups[id] > 0) {
+                    db.powerups[id]--;
+                    // Update quest: use PU
+                    db.quests[7].current++;
+
+                    if (id === 0) { // Food
+                        state.puFoodMulti = 3 + Math.floor(Math.random()*3); // 3,4,5
+                        state.puFoodTimer = 60;
+                    } else if (id === 1) { // Speed
+                        state.puSpeedMulti = 3 + Math.floor(Math.random()*3); // 3,4,5
+                        state.puSpeedTimer = 90;
+                    } else if (id === 2) { // God
+                        state.puGodTimer = 30;
+                    } else if (id === 3) { // Zoom
+                        state.puZoomTimer = 90;
+                    }
+                    updatePowerupUI();
+                }
+            };
+
+            function updatePowerupUI() {
+                for(let i=0; i<4; i++) {
+                    document.getElementById(`pu-count-${i}`).innerText = db.powerups[i];
+                    let btn = document.getElementById(`pu-${i}`);
+                    let active = false;
+                    if(i===0 && state.puFoodTimer>0) active=true;
+                    if(i===1 && state.puSpeedTimer>0) active=true;
+                    if(i===2 && state.puGodTimer>0) active=true;
+                    if(i===3 && state.puZoomTimer>0) active=true;
+
+                    if(active) btn.classList.add('active-pu'); else btn.classList.remove('active-pu');
+                    if(db.powerups[i] <= 0 && !active) btn.style.opacity = '0.5'; else btn.style.opacity = '1';
+                }
+            }
 
             // --- CLASSES ---
             class Snake {
-                constructor(x, y, colorHue, name, isPlayer = false) {
-                    this.x = x;
-                    this.y = y;
+                constructor(x, y, skinId, name, isPlayer = false) {
+                    this.x = x; this.y = y;
                     this.angle = Math.random() * Math.PI * 2;
-                    this.colorHue = colorHue;
+                    this.skinId = skinId;
                     this.name = name;
                     this.isPlayer = isPlayer;
                     this.body = [];
@@ -477,14 +784,21 @@
 
                 update(deltaTime, targetX, targetY, isBoosting) {
                     if (this.isDead) return;
-
                     const dtSec = deltaTime / 1000;
 
-                    // Boost logic
-                    let actualBoosting = isBoosting && this.score > 30;
-                    const speed = actualBoosting ? CONFIG.BASE_SPEED * CONFIG.BOOST_SPEED_MULTI : CONFIG.BASE_SPEED;
+                    let speed = CONFIG.BASE_SPEED;
+                    let actuallyBoosting = false;
 
-                    if (actualBoosting) {
+                    if (this.isPlayer && state.puSpeedTimer > 0) {
+                        // Powerup Speed Boost active
+                        speed = CONFIG.BASE_SPEED * state.puSpeedMulti;
+                    } else if (isBoosting && this.score > 30) {
+                        // Normal Boost
+                        speed = CONFIG.BASE_SPEED * CONFIG.BOOST_SPEED_MULTI;
+                        actuallyBoosting = true;
+                    }
+
+                    if (actuallyBoosting) {
                         const loss = 5 * dtSec;
                         this.score -= loss;
                         this.boostLossAccumulator = (this.boostLossAccumulator || 0) + loss;
@@ -492,53 +806,40 @@
                             this.boostLossAccumulator -= 1;
                             if (this.bodySegments && this.bodySegments.length > 0) {
                                 const tail = this.bodySegments[this.bodySegments.length - 1];
-                                spawnFood(tail.x, tail.y, this.colorHue, CONFIG.FOOD_RADIUS * 1.5);
+                                spawnFood(tail.x, tail.y, 0, CONFIG.FOOD_RADIUS * 1.5, false); // basic color
                             }
                         }
                     }
 
-                    // Turning
                     let targetAngle = Math.atan2(targetY, targetX);
                     let angleDiff = targetAngle - this.angle;
                     while (angleDiff <= -Math.PI) angleDiff += Math.PI * 2;
                     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
 
                     const maxTurn = CONFIG.TURN_SPEED * dtSec;
-                    if (Math.abs(angleDiff) < maxTurn) {
-                        this.angle = targetAngle;
-                    } else {
-                        this.angle += Math.sign(angleDiff) * maxTurn;
-                    }
+                    if (Math.abs(angleDiff) < maxTurn) this.angle = targetAngle;
+                    else this.angle += Math.sign(angleDiff) * maxTurn;
 
-                    // Move
                     this.x += Math.cos(this.angle) * speed * dtSec;
                     this.y += Math.sin(this.angle) * speed * dtSec;
 
-                    // Boundary check
                     if (Math.hypot(this.x, this.y) > CONFIG.MAP_RADIUS - CONFIG.SNAKE_RADIUS) {
-                        this.die();
-                        return;
+                        this.die(); return;
                     }
 
-                    // Body update
                     this.body.unshift({x: this.x, y: this.y});
-
                     let newBody = [];
                     let currentHistIdx = 0;
                     let distanceAccumulated = 0;
                     newBody.push({x: this.x, y: this.y});
 
-                    // Optimize: Don't make 1 score = 1 segment.
-                    // Scale segments down significantly so the game doesn't crash when score gets high
                     const targetSegments = Math.floor(10 + this.score / 15);
-
                     for (let i = 1; i < targetSegments; i++) {
                         let neededDistance = CONFIG.SPACING;
                         while(neededDistance > 0 && currentHistIdx < this.body.length - 1) {
                             const p1 = this.body[currentHistIdx];
                             const p2 = this.body[currentHistIdx + 1];
                             const distToNext = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-
                             if (distanceAccumulated + distToNext >= neededDistance) {
                                 const ratio = (neededDistance - distanceAccumulated) / distToNext;
                                 const px = p1.x + (p2.x - p1.x) * ratio;
@@ -554,75 +855,8 @@
                             }
                         }
                     }
-
-                    if (currentHistIdx < this.body.length) {
-                        this.body = this.body.slice(0, currentHistIdx + 2);
-                    }
+                    if (currentHistIdx < this.body.length) this.body = this.body.slice(0, currentHistIdx + 2);
                     this.bodySegments = newBody;
-                }
-
-                draw(ctx, camX, camY) {
-                    if (this.isDead || !this.bodySegments) return;
-
-                    const scaleFactor = 1 + (this.score / 500) * 0.1;
-                    const radius = CONFIG.SNAKE_RADIUS * scaleFactor;
-
-                    for (let i = this.bodySegments.length - 1; i >= 0; i--) {
-                        const seg = this.bodySegments[i];
-                        const sx = seg.x - camX + window.innerWidth / 2;
-                        const sy = seg.y - camY + window.innerHeight / 2;
-
-                        if (sx < -radius || sx > window.innerWidth + radius ||
-                            sy < -radius || sy > window.innerHeight + radius) continue;
-
-                        ctx.beginPath();
-                        ctx.arc(sx, sy, radius, 0, Math.PI * 2);
-
-                        // Optimize: Removed heavy shadowBlur and createRadialGradient
-                        if (i === 0) {
-                            ctx.fillStyle = `hsl(${this.colorHue}, 100%, 60%)`;
-                        } else {
-                            const lightness = (i % 4 === 0) ? 60 : 40;
-                            ctx.fillStyle = `hsl(${this.colorHue}, 100%, ${lightness}%)`;
-                        }
-                        ctx.fill();
-
-                        // Add a simple stroke to give depth without expensive gradients
-                        ctx.lineWidth = 1;
-                        ctx.strokeStyle = `hsl(${this.colorHue}, 100%, 20%)`;
-                        ctx.stroke();
-                    }
-
-                    // Eyes
-                    if (this.bodySegments.length > 0) {
-                        const hx = this.bodySegments[0].x - camX + window.innerWidth / 2;
-                        const hy = this.bodySegments[0].y - camY + window.innerHeight / 2;
-                        const eyeOffset = radius * 0.6;
-                        const eyeRadius = radius * 0.3;
-                        const pupilRadius = radius * 0.15;
-
-                        const drawEye = (angleOffset) => {
-                            const ex = hx + Math.cos(this.angle + angleOffset) * eyeOffset;
-                            const ey = hy + Math.sin(this.angle + angleOffset) * eyeOffset;
-                            ctx.fillStyle = 'white';
-                            ctx.beginPath(); ctx.arc(ex, ey, eyeRadius, 0, Math.PI*2); ctx.fill();
-                            const px = ex + Math.cos(this.angle) * (eyeRadius * 0.5);
-                            const py = ey + Math.sin(this.angle) * (eyeRadius * 0.5);
-                            ctx.fillStyle = 'black';
-                            ctx.beginPath(); ctx.arc(px, py, pupilRadius, 0, Math.PI*2); ctx.fill();
-                        };
-                        drawEye(Math.PI / 4);
-                        drawEye(-Math.PI / 4);
-
-                        // Draw Name Above Head
-                        ctx.fillStyle = 'white';
-                        ctx.strokeStyle = 'black';
-                        ctx.lineWidth = 3;
-                        ctx.font = '14px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.strokeText(this.name, hx, hy - radius - 10);
-                        ctx.fillText(this.name, hx, hy - radius - 10);
-                    }
                 }
 
                 die() {
@@ -630,61 +864,56 @@
                     if (this.bodySegments) {
                         for (let i = 0; i < this.bodySegments.length; i += 2) {
                             const seg = this.bodySegments[i];
-                            spawnFood(seg.x + (Math.random()*10-5), seg.y + (Math.random()*10-5), this.colorHue, CONFIG.FOOD_RADIUS * 2);
+                            spawnFood(seg.x + (Math.random()*10-5), seg.y + (Math.random()*10-5), 0, CONFIG.FOOD_RADIUS * 2, false);
                         }
                     }
-                    if (this.isPlayer) {
-                        setPhase('GAMEOVER');
-                    }
+                    if (this.isPlayer) gameOver();
                 }
             }
 
             class AISnake extends Snake {
-                constructor(x, y, colorHue, name) {
-                    super(x, y, colorHue, name, false);
-                    this.targetX = 0;
-                    this.targetY = 0;
-                    this.stateTimer = 0;
+                constructor(x, y, hue, name) {
+                    super(x, y, 0, name, false); // use generic skin 0
+                    this.aiHue = hue; // AI uses raw hue instead of skin DB
+                    this.targetX = 0; this.targetY = 0; this.stateTimer = 0;
                 }
-
                 updateAI(deltaTime, allSnakes, foods) {
                     if (this.isDead) return;
-
                     this.stateTimer -= deltaTime;
-                    let targetX = 0, targetY = 0, isBoosting = false;
-                    let evading = false, evadeForceX = 0, evadeForceY = 0;
+                    let isBoosting = false;
+                    let evading = false, evForceX = 0, evForceY = 0;
 
-                    // Avoid boundary
                     if (Math.hypot(this.x, this.y) > CONFIG.MAP_RADIUS - 300) {
-                        evadeForceX -= this.x; evadeForceY -= this.y; evading = true;
+                        evForceX -= this.x; evForceY -= this.y; evading = true;
                     }
 
-                    // Avoid other bodies
                     for (let s of allSnakes) {
                         if (s === this || s.isDead || !s.bodySegments) continue;
+                        if (s.isPlayer && state.puGodTimer > 0) continue; // AI ignores player if god mode
+
                         for (let seg of s.bodySegments) {
                             const dx = this.x - seg.x, dy = this.y - seg.y;
                             const dist = Math.hypot(dx, dy);
                             if (dist < 100) {
-                                evadeForceX += (dx/dist)*(100-dist); evadeForceY += (dy/dist)*(100-dist); evading = true;
+                                evForceX += (dx/dist)*(100-dist); evForceY += (dy/dist)*(100-dist); evading = true;
                             }
                         }
                     }
 
                     if (evading) {
-                        this.targetX = evadeForceX; this.targetY = evadeForceY;
-                        if (Math.hypot(evadeForceX, evadeForceY) > 50) isBoosting = true;
+                        this.targetX = evForceX; this.targetY = evForceY;
+                        if (Math.hypot(evForceX, evForceY) > 50) isBoosting = true;
                     } else {
                         if (this.stateTimer <= 0) {
-                            let nearestFood = null, minDist = 500;
+                            let nearest = null, minDist = 500;
                             for (let f of foods) {
                                 const d = Math.hypot(f.x - this.x, f.y - this.y);
-                                if (d < minDist) { minDist = d; nearestFood = f; }
+                                if (d < minDist) { minDist = d; nearest = f; }
                             }
-                            if (nearestFood) {
-                                this.targetX = nearestFood.x - this.x; this.targetY = nearestFood.y - this.y;
+                            if (nearest) {
+                                this.targetX = nearest.x - this.x; this.targetY = nearest.y - this.y;
                                 this.stateTimer = 500;
-                                if (nearestFood.size > CONFIG.FOOD_RADIUS && minDist > 100) isBoosting = true;
+                                if (nearest.size > CONFIG.FOOD_RADIUS && minDist > 100) isBoosting = true;
                             } else {
                                 const a = Math.random() * Math.PI * 2;
                                 this.targetX = Math.cos(a)*200; this.targetY = Math.sin(a)*200;
@@ -700,19 +929,25 @@
             }
 
             // --- ENGINE FUNCTIONS ---
-            function spawnFood(x, y, colorHue, size) {
+            function spawnFood(x, y, hue, size, isSuper) {
                 if (state.foods.length >= CONFIG.MAX_FOOD && x === undefined) return;
                 let fX = x, fY = y;
+                let superF = isSuper;
+
                 if (fX === undefined) {
                     const angle = Math.random() * Math.PI * 2;
                     const r = Math.sqrt(Math.random()) * (CONFIG.MAP_RADIUS - 50);
                     fX = Math.cos(angle) * r; fY = Math.sin(angle) * r;
+                    // 1/15 chance for super food naturally
+                    if (Math.random() < 1/15) superF = true;
                 }
+
                 state.foods.push({
                     x: fX, y: fY,
-                    hue: colorHue !== undefined ? colorHue : Math.random() * 360,
-                    size: size || CONFIG.FOOD_RADIUS,
-                    wobble: Math.random() * Math.PI * 2
+                    hue: hue || Math.random() * 360,
+                    size: size || (superF ? CONFIG.FOOD_RADIUS * 2 : CONFIG.FOOD_RADIUS),
+                    wobble: Math.random() * Math.PI * 2,
+                    isSuper: superF || false
                 });
             }
 
@@ -726,18 +961,79 @@
                 state.ais.push(ai);
             }
 
+            function gameOver() {
+                setPhase('GAMEOVER');
+
+                const finalScore = Math.floor(state.player.score);
+                const expGained = Math.floor(finalScore / 10);
+                const coinsGained = Math.floor(finalScore * 0.1);
+
+                // Skin Bonus
+                let skinBonusPct = 0;
+                if (window.SKINS_DATA && window.SKINS_DATA[db.equippedSkin]) {
+                    skinBonusPct = window.SKINS_DATA[db.equippedSkin].bonus;
+                }
+                const bonusCoins = Math.floor(coinsGained * (skinBonusPct / 100));
+
+                document.getElementById('go-score').innerText = finalScore;
+                document.getElementById('go-exp').innerText = expGained;
+                document.getElementById('go-coins').innerText = coinsGained + (bonusCoins>0 ? ` (+${bonusCoins} Skin Bonus)` : '');
+
+                if (bonusCoins > 0) document.getElementById('go-bonus').innerText = `Skin Bonus Applied: +${skinBonusPct}%`;
+                else document.getElementById('go-bonus').innerText = '';
+
+                // Apply rewards
+                db.exp += expGained;
+                db.coins += coinsGained + bonusCoins;
+
+                // Level Up Logic
+                let leveledUp = false;
+                let rwcGained = false;
+                while (db.exp >= 100) {
+                    db.exp -= 100;
+                    db.level++;
+                    db.coins += 50; // 50 coins per level
+                    leveledUp = true;
+                    if (db.level % 5 === 0) {
+                        db.rwc += 1;
+                        rwcGained = true;
+                    }
+                }
+
+                if (leveledUp) document.getElementById('go-levelup').classList.remove('hidden');
+                else document.getElementById('go-levelup').classList.add('hidden');
+
+                if (rwcGained) document.getElementById('go-rwc').classList.remove('hidden');
+                else document.getElementById('go-rwc').classList.add('hidden');
+
+                // Quests updates
+                db.quests[2].current = Math.max(db.quests[2].current, finalScore);
+                db.quests[3].current = Math.max(db.quests[3].current, finalScore);
+
+                // Save and update header so menu is ready
+                if(window.saveDB) window.saveDB();
+            }
+
             function checkCollisions(allSnakes) {
                 for (let i = 0; i < allSnakes.length; i++) {
                     const s1 = allSnakes[i];
                     if (s1.isDead) continue;
+
+                    // God mode bypass
+                    if (s1.isPlayer && state.puGodTimer > 0) continue;
+
                     const h1 = {x: s1.x, y: s1.y};
-                    const r1 = CONFIG.SNAKE_RADIUS * (1 + (s1.score/200)*0.1);
+                    const r1 = CONFIG.SNAKE_RADIUS * (1 + (s1.score/500)*0.1);
 
                     for (let j = 0; j < allSnakes.length; j++) {
-                        if (i === j) continue; // NEVER die from own body
+                        if (i === j) continue;
                         const s2 = allSnakes[j];
                         if (s2.isDead || !s2.bodySegments) continue;
-                        const r2 = CONFIG.SNAKE_RADIUS * (1 + (s2.score/200)*0.1);
+
+                        // God mode bypass
+                        if (s2.isPlayer && state.puGodTimer > 0) continue;
+
+                        const r2 = CONFIG.SNAKE_RADIUS * (1 + (s2.score/500)*0.1);
                         const cDist = r1 + r2 * 0.8;
 
                         for (let k = 3; k < s2.bodySegments.length; k++) {
@@ -752,11 +1048,26 @@
 
             function handleEating(snake) {
                 if (snake.isDead) return;
-                const r = CONFIG.SNAKE_RADIUS * (1 + (snake.score/200)*0.1) + 10;
+                const r = CONFIG.SNAKE_RADIUS * (1 + (snake.score/500)*0.1) + 10;
+
                 for (let i = state.foods.length - 1; i >= 0; i--) {
                     const f = state.foods[i];
                     if (Math.hypot(f.x - snake.x, f.y - snake.y) < r) {
-                        snake.score += (f.size === CONFIG.FOOD_RADIUS) ? 1 : 5;
+
+                        let points = f.isSuper ? 5 : 1;
+                        if (snake.isPlayer && state.puFoodTimer > 0) {
+                            points *= state.puFoodMulti;
+                        }
+
+                        snake.score += points;
+
+                        if (snake.isPlayer) {
+                            if (f.isSuper) db.quests[5].current++;
+                            if (f.isSuper) db.quests[6].current++;
+                            if (!f.isSuper) db.quests[0].current++;
+                            if (!f.isSuper) db.quests[1].current++;
+                        }
+
                         state.foods.splice(i, 1);
                         if (state.foods.length < CONFIG.MAX_FOOD) spawnFood();
                     }
@@ -764,34 +1075,52 @@
             }
 
             function update(deltaTime) {
-                // If in menu, let's just make camera slowly drift
                 if (state.phase === 'MENU') {
                     state.camera.x += 20 * (deltaTime/1000);
                     state.camera.y += 10 * (deltaTime/1000);
-                    // Update food wobble in menu too
                     const timeSec = performance.now() / 1000;
                     for (let f of state.foods) f.currentWobble = Math.sin(timeSec*5 + f.wobble)*2;
-                    return; // Don't process game logic
+                    return;
                 }
 
                 if (state.phase !== 'PLAYING') return;
 
-                const cx = canvas.width / 2, cy = canvas.height / 2;
-                const dx = state.mouseX - cx, dy = state.mouseY - cy;
+                const dtSec = deltaTime / 1000;
+
+                // Decrease Powerup Timers
+                if (state.puFoodTimer > 0) state.puFoodTimer -= dtSec;
+                if (state.puSpeedTimer > 0) state.puSpeedTimer -= dtSec;
+                if (state.puGodTimer > 0) state.puGodTimer -= dtSec;
+                if (state.puZoomTimer > 0) state.puZoomTimer -= dtSec;
+
+                // Update Camera Zoom
+                const targetZoom = state.puZoomTimer > 0 ? 2.5 : 1.3;
+                state.camera.zoom += (targetZoom - state.camera.zoom) * 0.05;
+
+                // Determine input
+                let tX = 0, tY = 0;
+                if (SlitherInput.isTouch && SlitherInput.getJoyVector().x !== 0) {
+                    const vec = SlitherInput.getJoyVector();
+                    tX = vec.x; tY = vec.y;
+                } else {
+                    const cx = canvas.width / 2, cy = canvas.height / 2;
+                    tX = state.mouseX - cx; tY = state.mouseY - cy;
+                }
+                const isBoosting = state.isMouseBoosting || SlitherInput.isBoostingMobile;
 
                 let activeSnakes = [];
                 if (state.player && !state.player.isDead) activeSnakes.push(state.player);
                 for (let ai of state.ais) if (!ai.isDead) activeSnakes.push(ai);
 
-                // Player Update
+                // Update Player
                 if (state.player && !state.player.isDead) {
-                    state.player.update(deltaTime, dx, dy, state.isBoosting);
+                    state.player.update(deltaTime, tX, tY, isBoosting);
                     state.camera.x += (state.player.x - state.camera.x) * 0.1;
                     state.camera.y += (state.player.y - state.camera.y) * 0.1;
                     handleEating(state.player);
                 }
 
-                // AI Update
+                // Update AI
                 for (let i = state.ais.length - 1; i >= 0; i--) {
                     const ai = state.ais[i];
                     if (!ai.isDead) {
@@ -812,21 +1141,29 @@
                 const timeSec = performance.now() / 1000;
                 for (let f of state.foods) f.currentWobble = Math.sin(timeSec*5 + f.wobble)*2;
 
+                // Playtime Quest Tracking
+                db.playTime += dtSec;
+                if (db.playTime >= 1) {
+                    db.quests[4].current += Math.floor(db.playTime);
+                    db.playTime = db.playTime % 1;
+                }
+
                 updateUI(activeSnakes);
+                updatePowerupUI(); // refresh active borders
             }
 
             function updateUI(activeSnakes) {
                 if (state.player && !state.player.isDead) {
-                    document.getElementById('ui-length').innerText = Math.floor(state.player.score);
+                    document.getElementById('ig-length').innerText = Math.floor(state.player.score);
+                    document.getElementById('ig-coins').innerText = db.coins;
                 }
 
-                // Sort for rank
                 activeSnakes.sort((a,b) => b.score - a.score);
 
                 if (state.player && !state.player.isDead) {
                     const rank = activeSnakes.indexOf(state.player) + 1;
-                    document.getElementById('ui-rank').innerText = rank;
-                    document.getElementById('ui-total').innerText = activeSnakes.length;
+                    document.getElementById('ig-rank').innerText = rank;
+                    document.getElementById('ig-total').innerText = activeSnakes.length;
                 }
 
                 const list = document.getElementById('leaderboard-list');
@@ -840,12 +1177,13 @@
                 }
             }
 
-            function drawHexagons(ctx, camX, camY) {
-                const hSize = CONFIG.HEX_SIZE;
+            function drawHexagons(ctx, camX, camY, zoom) {
+                const hSize = CONFIG.HEX_SIZE * zoom;
                 const hexH = hSize * Math.sqrt(3), hexW = hSize * 2;
                 const hSpace = hexW * 0.75, vSpace = hexH;
-                const left = camX - canvas.width/2, right = camX + canvas.width/2;
-                const top = camY - canvas.height/2, bottom = camY + canvas.height/2;
+
+                const left = camX - canvas.width/2/zoom, right = camX + canvas.width/2/zoom;
+                const top = camY - canvas.height/2/zoom, bottom = camY + canvas.height/2/zoom;
 
                 const startCol = Math.floor(left/hSpace)-1, endCol = Math.ceil(right/hSpace)+1;
 
@@ -857,7 +1195,9 @@
 
                     for (let row = startRow; row <= endRow; row++) {
                         const y = row * vSpace + offset;
-                        const sx = x - left, sy = y - top;
+                        const sx = (x - camX) * zoom + canvas.width/2;
+                        const sy = (y - camY) * zoom + canvas.height/2;
+
                         ctx.moveTo(sx+hSize, sy); ctx.lineTo(sx+hSize/2, sy+hexH/2);
                         ctx.lineTo(sx-hSize/2, sy+hexH/2); ctx.lineTo(sx-hSize, sy);
                         ctx.lineTo(sx-hSize/2, sy-hexH/2); ctx.lineTo(sx+hSize/2, sy-hexH/2);
@@ -867,41 +1207,133 @@
                 ctx.strokeStyle = CONFIG.GRID_COLOR; ctx.lineWidth = 1; ctx.stroke();
             }
 
+            function getSkinStyle(ctx, snake, i, radius) {
+                // Return fillStyle based on skin pattern
+                let hue = snake.aiHue || 120; // default neon green
+                let pattern = 'solid';
+
+                if (snake.isPlayer && window.SKINS_DATA && window.SKINS_DATA[snake.skinId]) {
+                    hue = window.SKINS_DATA[snake.skinId].hue;
+                    pattern = window.SKINS_DATA[snake.skinId].pattern;
+                }
+
+                if (pattern === 'rainbow') hue = (hue + i * 10 + performance.now()/10) % 360;
+                if (pattern === 'diamond') hue = (hue + (i%3)*40) % 360;
+                if (pattern === 'dragon' && i%5===0) return `hsl(0, 100%, 50%)`; // red spikes
+                if (pattern === 'tiger' && i%3===0) return `black`;
+                if (pattern === 'panther') return (i%2===0) ? '#222' : '#000';
+
+                if (i === 0) return `hsl(${hue}, 100%, 60%)`; // Head usually brighter
+
+                let lightness = 50;
+                if (pattern === 'dark') lightness = (i%4===0) ? 30 : 15;
+                else if (pattern === 'light') lightness = (i%4===0) ? 90 : 70;
+                else lightness = (i%4===0) ? 60 : 40; // solid default
+
+                return `hsl(${hue}, 100%, ${lightness}%)`;
+            }
+
             function render() {
                 ctx.fillStyle = CONFIG.BG_COLOR;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                drawHexagons(ctx, state.camera.x, state.camera.y);
+                drawHexagons(ctx, state.camera.x, state.camera.y, state.camera.zoom);
 
                 // Draw Boundary
-                const cx = -state.camera.x + canvas.width/2, cy = -state.camera.y + canvas.height/2;
-                ctx.beginPath(); ctx.arc(cx, cy, CONFIG.MAP_RADIUS, 0, Math.PI*2);
-                ctx.strokeStyle = CONFIG.BOUNDARY_COLOR; ctx.lineWidth = 15; ctx.stroke();
-                ctx.beginPath(); ctx.rect(0,0,canvas.width,canvas.height); ctx.arc(cx,cy,CONFIG.MAP_RADIUS,0,Math.PI*2);
+                const z = state.camera.zoom;
+                const cx = (-state.camera.x) * z + canvas.width/2;
+                const cy = (-state.camera.y) * z + canvas.height/2;
+                const br = CONFIG.MAP_RADIUS * z;
+
+                ctx.beginPath(); ctx.arc(cx, cy, br, 0, Math.PI*2);
+                ctx.strokeStyle = CONFIG.BOUNDARY_COLOR; ctx.lineWidth = 15*z; ctx.stroke();
+
+                // Darken outside
+                ctx.beginPath(); ctx.rect(0,0,canvas.width,canvas.height); ctx.arc(cx,cy,br,0,Math.PI*2);
                 ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fill('evenodd');
 
                 // Draw Foods
                 for (let f of state.foods) {
-                    const sx = f.x - state.camera.x + canvas.width/2, sy = f.y - state.camera.y + canvas.height/2;
-                    if (sx < -20 || sx > canvas.width+20 || sy < -20 || sy > canvas.height+20) continue;
-                    const r = Math.max(2, f.size + (f.currentWobble||0));
+                    const sx = (f.x - state.camera.x) * z + canvas.width/2;
+                    const sy = (f.y - state.camera.y) * z + canvas.height/2;
+                    if (sx < -50 || sx > canvas.width+50 || sy < -50 || sy > canvas.height+50) continue;
 
-                    // Optimize: Removed shadowBlur. Used two overlapping circles for a glow effect.
-                    ctx.beginPath(); ctx.arc(sx, sy, r * 1.5, 0, Math.PI*2);
-                    ctx.fillStyle = `hsla(${f.hue}, 100%, 50%, 0.3)`; ctx.fill();
+                    const r = Math.max(2, f.size + (f.currentWobble||0)) * z;
 
-                    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI*2);
-                    ctx.fillStyle = `hsl(${f.hue}, 100%, 70%)`; ctx.fill();
+                    if (f.isSuper) {
+                        ctx.save();
+                        ctx.translate(sx, sy);
+                        ctx.rotate(f.wobble + performance.now()/500);
+                        ctx.beginPath();
+                        for(let i=0; i<5; i++) {
+                            ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*r*1.5, -Math.sin((18+i*72)/180*Math.PI)*r*1.5);
+                            ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*r*0.6, -Math.sin((54+i*72)/180*Math.PI)*r*0.6);
+                        }
+                        ctx.closePath();
+                        ctx.fillStyle = `hsl(${f.hue}, 100%, 80%)`;
+                        ctx.shadowBlur = 15; ctx.shadowColor = `hsl(${f.hue}, 100%, 50%)`;
+                        ctx.fill();
+                        ctx.restore();
+                    } else {
+                        ctx.beginPath(); ctx.arc(sx, sy, r * 1.5, 0, Math.PI*2);
+                        ctx.fillStyle = `hsla(${f.hue}, 100%, 50%, 0.3)`; ctx.fill();
+                        ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI*2);
+                        ctx.fillStyle = `hsl(${f.hue}, 100%, 70%)`; ctx.fill();
+                    }
                 }
 
                 // Draw Snakes
+                const drawSnake = (s) => {
+                    if (s.isDead || !s.bodySegments) return;
+                    const scale = 1 + (s.score / 500) * 0.1;
+                    const radius = CONFIG.SNAKE_RADIUS * scale * z;
+
+                    for (let i = s.bodySegments.length - 1; i >= 0; i--) {
+                        const seg = s.bodySegments[i];
+                        const sx = (seg.x - state.camera.x) * z + canvas.width/2;
+                        const sy = (seg.y - state.camera.y) * z + canvas.height/2;
+
+                        if (sx < -radius || sx > canvas.width+radius || sy < -radius || sy > canvas.height+radius) continue;
+
+                        ctx.beginPath(); ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+                        ctx.fillStyle = getSkinStyle(ctx, s, i, radius);
+
+                        if (s.isPlayer && state.puGodTimer > 0) ctx.globalAlpha = 0.5; // Ghost effect
+
+                        ctx.fill();
+                        ctx.lineWidth = 1; ctx.strokeStyle = `rgba(0,0,0,0.5)`; ctx.stroke();
+                        ctx.globalAlpha = 1.0;
+                    }
+
+                    if (s.bodySegments.length > 0) {
+                        const hx = (s.bodySegments[0].x - state.camera.x) * z + canvas.width/2;
+                        const hy = (s.bodySegments[0].y - state.camera.y) * z + canvas.height/2;
+                        const eOff = radius * 0.6, eRad = radius * 0.3, pRad = radius * 0.15;
+
+                        const drawEye = (aOff) => {
+                            const ex = hx + Math.cos(s.angle + aOff) * eOff;
+                            const ey = hy + Math.sin(s.angle + aOff) * eOff;
+                            ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(ex,ey,eRad,0,Math.PI*2); ctx.fill();
+                            const px = ex + Math.cos(s.angle)*(eRad*0.5);
+                            const py = ey + Math.sin(s.angle)*(eRad*0.5);
+                            ctx.fillStyle='black'; ctx.beginPath(); ctx.arc(px,py,pRad,0,Math.PI*2); ctx.fill();
+                        };
+                        drawEye(Math.PI/4); drawEye(-Math.PI/4);
+
+                        ctx.fillStyle='white'; ctx.strokeStyle='black'; ctx.lineWidth=3;
+                        ctx.font=`${14*z}px Arial`; ctx.textAlign='center';
+                        ctx.strokeText(s.name, hx, hy - radius - 10*z);
+                        ctx.fillText(s.name, hx, hy - radius - 10*z);
+                    }
+                };
+
                 if (state.phase !== 'MENU') {
-                    for (let ai of state.ais) ai.draw(ctx, state.camera.x, state.camera.y);
-                    if (state.player) state.player.draw(ctx, state.camera.x, state.camera.y);
+                    for (let ai of state.ais) drawSnake(ai);
+                    if (state.player) drawSnake(state.player);
                 }
 
                 // Minimap
-                if (state.phase === 'PLAYING') {
+                if (state.phase === 'PLAYING' || state.phase === 'GAMEOVER') {
                     minimapCanvas.width = minimapCanvas.parentElement.clientWidth;
                     minimapCanvas.height = minimapCanvas.parentElement.clientHeight;
                     const w = minimapCanvas.width, r = w/2;
@@ -910,7 +1342,6 @@
                     ctxMinimap.fillStyle = 'rgba(0,0,0,0.5)'; ctxMinimap.fill();
 
                     const mScale = r / CONFIG.MAP_RADIUS;
-
                     ctxMinimap.fillStyle = 'rgba(255,255,255,0.3)';
                     for(let f of state.foods) {
                         if(Math.random()>0.1) continue;
@@ -922,7 +1353,6 @@
                         ctxMinimap.beginPath(); ctxMinimap.arc(r+ai.x*mScale, r+ai.y*mScale, 2, 0, Math.PI*2);
                         ctxMinimap.fillStyle = 'rgba(255,100,100,0.8)'; ctxMinimap.fill();
                     }
-
                     if (state.player && !state.player.isDead) {
                         ctxMinimap.beginPath(); ctxMinimap.arc(r+state.player.x*mScale, r+state.player.y*mScale, 3, 0, Math.PI*2);
                         ctxMinimap.fillStyle = '#0f0'; ctxMinimap.fill();
@@ -941,8 +1371,7 @@
                 requestAnimationFrame(gameLoop);
             }
 
-            // --- INIT ---
-            for(let i=0; i<300; i++) spawnFood(); // Populate background foods for menu
+            for(let i=0; i<300; i++) spawnFood();
             setPhase('MENU');
             requestAnimationFrame(gameLoop);
         })();
