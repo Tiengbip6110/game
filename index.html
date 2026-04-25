@@ -114,7 +114,7 @@
             position: absolute;
             top: 10px;
             left: 20px;
-            font-size: 18px;
+            font-size: 14px; /* Reduced from 18px */
             font-weight: bold;
         }
         #player-name-display {
@@ -122,7 +122,7 @@
             top: 10px;
             width: 100%;
             text-align: center;
-            font-size: 24px;
+            font-size: 20px; /* Reduced from 24px */
             font-weight: bold;
             color: rgba(255, 255, 255, 0.8);
         }
@@ -130,25 +130,25 @@
             position: absolute;
             top: 10px;
             right: 20px;
-            font-size: 16px;
+            font-size: 12px; /* Reduced from 16px */
             color: #aaa;
         }
 
         #leaderboard-panel {
             position: absolute;
-            top: 40px;
+            top: 30px;
             right: 20px;
-            width: 220px;
+            width: 110px; /* Reduced from 220px */
             background-color: rgba(0, 0, 0, 0.6);
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 10px;
-            padding: 10px;
-            font-size: 16px;
+            padding: 8px;
+            font-size: 12px; /* Reduced from 16px */
         }
         #leaderboard-panel h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             text-align: center;
-            font-size: 18px;
+            font-size: 14px; /* Reduced from 18px */
             color: #fff;
         }
         #leaderboard-list {
@@ -157,7 +157,7 @@
             margin: 0;
         }
         #leaderboard-list li {
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             display: flex;
             justify-content: space-between;
         }
@@ -165,15 +165,15 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 140px;
+            max-width: 60px; /* Reduced to fit smaller width */
         }
 
         #minimap-container {
             position: absolute;
             bottom: 60px;
             right: 20px;
-            width: 120px;
-            height: 120px;
+            width: 60px; /* Reduced from 120px */
+            height: 60px; /* Reduced from 120px */
             border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             background-color: rgba(0, 0, 0, 0.5);
@@ -329,9 +329,9 @@
                 BOOST_SPEED_MULTI: 1.8,
                 TURN_SPEED: Math.PI * 1.5,
                 SNAKE_RADIUS: 16,
-                SPACING: 8,
+                SPACING: 12, // Increased spacing to reduce segment count
                 FOOD_RADIUS: 6,
-                MAX_FOOD: 800,
+                MAX_FOOD: 600, // Reduced slightly to save performance
                 AI_COUNT: 15,
                 DEFAULT_NAME: "FreeBabysittingCallTrump"
             };
@@ -528,7 +528,11 @@
                     let distanceAccumulated = 0;
                     newBody.push({x: this.x, y: this.y});
 
-                    for (let i = 1; i < this.score; i++) {
+                    // Optimize: Don't make 1 score = 1 segment.
+                    // Scale segments down significantly so the game doesn't crash when score gets high
+                    const targetSegments = Math.floor(10 + this.score / 15);
+
+                    for (let i = 1; i < targetSegments; i++) {
                         let neededDistance = CONFIG.SPACING;
                         while(neededDistance > 0 && currentHistIdx < this.body.length - 1) {
                             const p1 = this.body[currentHistIdx];
@@ -560,7 +564,7 @@
                 draw(ctx, camX, camY) {
                     if (this.isDead || !this.bodySegments) return;
 
-                    const scaleFactor = 1 + (this.score / 200) * 0.1;
+                    const scaleFactor = 1 + (this.score / 500) * 0.1;
                     const radius = CONFIG.SNAKE_RADIUS * scaleFactor;
 
                     for (let i = this.bodySegments.length - 1; i >= 0; i--) {
@@ -574,21 +578,19 @@
                         ctx.beginPath();
                         ctx.arc(sx, sy, radius, 0, Math.PI * 2);
 
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = `hsl(${this.colorHue}, 100%, 50%)`;
-
-                        const gradient = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
+                        // Optimize: Removed heavy shadowBlur and createRadialGradient
                         if (i === 0) {
-                            gradient.addColorStop(0, '#fff');
-                            gradient.addColorStop(1, `hsl(${this.colorHue}, 100%, 40%)`);
+                            ctx.fillStyle = `hsl(${this.colorHue}, 100%, 60%)`;
                         } else {
                             const lightness = (i % 4 === 0) ? 60 : 40;
-                            gradient.addColorStop(0, `hsl(${this.colorHue}, 100%, ${lightness + 10}%)`);
-                            gradient.addColorStop(1, `hsl(${this.colorHue}, 100%, ${lightness - 10}%)`);
+                            ctx.fillStyle = `hsl(${this.colorHue}, 100%, ${lightness}%)`;
                         }
-                        ctx.fillStyle = gradient;
                         ctx.fill();
-                        ctx.shadowBlur = 0;
+
+                        // Add a simple stroke to give depth without expensive gradients
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = `hsl(${this.colorHue}, 100%, 20%)`;
+                        ctx.stroke();
                     }
 
                     // Eyes
@@ -882,11 +884,15 @@
                 for (let f of state.foods) {
                     const sx = f.x - state.camera.x + canvas.width/2, sy = f.y - state.camera.y + canvas.height/2;
                     if (sx < -20 || sx > canvas.width+20 || sy < -20 || sy > canvas.height+20) continue;
-                    ctx.beginPath(); ctx.arc(sx, sy, Math.max(2, f.size + (f.currentWobble||0)), 0, Math.PI*2);
-                    ctx.shadowBlur = 10; ctx.shadowColor = `hsl(${f.hue},100%,50%)`;
-                    ctx.fillStyle = `hsl(${f.hue},100%,70%)`; ctx.fill();
+                    const r = Math.max(2, f.size + (f.currentWobble||0));
+
+                    // Optimize: Removed shadowBlur. Used two overlapping circles for a glow effect.
+                    ctx.beginPath(); ctx.arc(sx, sy, r * 1.5, 0, Math.PI*2);
+                    ctx.fillStyle = `hsla(${f.hue}, 100%, 50%, 0.3)`; ctx.fill();
+
+                    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI*2);
+                    ctx.fillStyle = `hsl(${f.hue}, 100%, 70%)`; ctx.fill();
                 }
-                ctx.shadowBlur = 0;
 
                 // Draw Snakes
                 if (state.phase !== 'MENU') {
