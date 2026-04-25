@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Offline Slither.io Clone</title>
+    <title>slither.io</title>
     <style>
         body, html {
             margin: 0;
@@ -11,422 +11,432 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000;
+            background-color: #0e1114;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+            user-select: none;
         }
         canvas {
             display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
-        #ui {
+
+        /* UI Layers */
+        #ui-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
+            z-index: 10;
             color: white;
-            font-family: Arial, sans-serif;
             text-shadow: 1px 1px 2px black;
         }
-        #score-board {
+
+        /* Interactive Overlay Elements */
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* --- Menu Screen --- */
+        #menu-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(14, 17, 20, 0.5); /* Dimmed background */
+            z-index: 20;
+        }
+        #menu-title {
+            font-size: 80px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px #0f0, 2px 2px 5px #000;
+            margin-bottom: 5px;
+        }
+        #menu-subtitle {
+            font-size: 20px;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+        #nickname-input {
+            width: 300px;
+            padding: 15px;
+            font-size: 20px;
+            border: 2px solid #555;
+            border-radius: 25px;
+            background-color: #222;
+            color: white;
+            text-align: center;
+            outline: none;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 10px #000;
+        }
+        #nickname-input:focus {
+            border-color: #0f0;
+        }
+        #play-btn {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px 50px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+        #play-btn:active {
+            transform: scale(0.95);
+        }
+        #highscore-display {
             position: absolute;
             top: 20px;
             left: 20px;
-            font-size: 24px;
+            font-size: 20px;
+            color: #ffeb3b;
+        }
+
+        /* --- In-Game UI --- */
+        #in-game-ui {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+        #top-left-info {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 18px;
             font-weight: bold;
         }
-        #leaderboard {
+        #player-name-display {
             position: absolute;
-            top: 20px;
-            right: 170px; /* Leave space for minimap */
-            width: 200px;
-            text-align: right;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        #server-info {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 16px;
+            color: #aaa;
+        }
+
+        #leaderboard-panel {
+            position: absolute;
+            top: 40px;
+            right: 20px;
+            width: 220px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
             font-size: 16px;
         }
-        #leaderboard ol {
-            list-style-type: none;
-            padding: 0;
-            margin-top: 5px;
+        #leaderboard-panel h3 {
+            margin: 0 0 10px 0;
+            text-align: center;
+            font-size: 18px;
+            color: #fff;
         }
+        #leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #leaderboard-list li {
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .lb-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+        }
+
         #minimap-container {
             position: absolute;
-            top: 20px;
+            bottom: 60px;
             right: 20px;
-            width: 130px;
-            height: 130px;
+            width: 120px;
+            height: 120px;
             border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             background-color: rgba(0, 0, 0, 0.5);
             overflow: hidden;
+            z-index: 10;
+            pointer-events: none;
         }
         #minimap {
             width: 100%;
             height: 100%;
         }
+
+        /* --- Game Over Screen --- */
+        #game-over-screen {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 30;
+        }
+        #game-over-title {
+            font-size: 60px;
+            font-weight: bold;
+            color: #ff3333;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #f00;
+        }
+        #final-score {
+            font-size: 30px;
+            color: white;
+            margin-bottom: 40px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 20px;
+        }
+        .go-btn {
+            background-color: #555;
+            color: white;
+            font-size: 20px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+        }
+        .go-btn.primary {
+            background-color: #4CAF50;
+        }
+        .go-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Common Bottom Text --- */
+        #bottom-text {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            z-index: 40;
+        }
+        #bottom-text a {
+            color: #4CAF50;
+            text-decoration: none;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        #small-logo {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.2);
+            pointer-events: none;
+            z-index: 40;
+        }
     </style>
 </head>
 <body>
+    <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
-    <div id="ui">
-        <div id="score-board">Score: <span id="score">0</span></div>
-        <div id="leaderboard">
-            <div><strong>Leaderboard</strong></div>
-            <ol id="top-players">
-                <!-- Top players will be populated here -->
-            </ol>
-        </div>
-        <div id="minimap-container">
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+
+        <!-- Minimap -->
+        <div id="minimap-container" style="display: none;">
             <canvas id="minimap"></canvas>
         </div>
+
+        <!-- Common Elements -->
+        <div id="small-logo">slither.io</div>
+        <div id="bottom-text">
+            The website might not work well on your device, so <a id="fake-app-link" class="interactive">Tap here to download the app!</a>
+        </div>
+
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="interactive">
+            <div id="highscore-display">Your High Score: <span id="hs-val">0</span></div>
+            <div id="menu-title">slither.io</div>
+            <div id="menu-subtitle">Eat to grow longer!</div>
+            <input type="text" id="nickname-input" placeholder="Nickname" maxlength="24">
+            <button id="play-btn">Play</button>
+        </div>
+
+        <!-- In-Game UI -->
+        <div id="in-game-ui">
+            <div id="top-left-info">
+                Your length: <span id="ui-length">0</span><br>
+                Your rank: <span id="ui-rank">0</span> of <span id="ui-total">0</span>
+            </div>
+            <div id="player-name-display">Name</div>
+            <div id="server-info">server <span id="server-id">0000</span></div>
+
+            <div id="leaderboard-panel">
+                <h3>Leaderboard</h3>
+                <ul id="leaderboard-list">
+                    <!-- populated dynamically -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="interactive">
+            <div id="game-over-title">YOU DIED</div>
+            <div id="final-score">Final Length: <span id="go-score">0</span></div>
+            <div class="btn-group">
+                <button id="btn-menu" class="go-btn">BACK TO MENU</button>
+                <button id="btn-play-again" class="go-btn primary">PLAY AGAIN</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
         (function() {
-            // Configuration & State
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-
+            // --- CONSTANTS & CONFIG ---
             const CONFIG = {
-                MAP_RADIUS: 3000,
-                HEX_SIZE: 30,
+                MAP_RADIUS: 4000,
+                HEX_SIZE: 40,
                 BG_COLOR: '#0e1114',
                 GRID_COLOR: '#1a2024',
-                BOUNDARY_COLOR: 'rgba(255, 50, 50, 0.8)',
-                BASE_SPEED: 150,
-                BOOST_SPEED_MULTI: 1.5,
-                TURN_SPEED: Math.PI, // radians per sec
-                SNAKE_RADIUS: 15,
-                SPACING: 8, // Distance between body segments
-                FOOD_RADIUS: 5,
-                MAX_FOOD: 500
+                BOUNDARY_COLOR: 'rgba(255, 50, 50, 0.4)',
+                BASE_SPEED: 180,
+                BOOST_SPEED_MULTI: 1.8,
+                TURN_SPEED: Math.PI * 1.5,
+                SNAKE_RADIUS: 16,
+                SPACING: 8,
+                FOOD_RADIUS: 6,
+                MAX_FOOD: 800,
+                AI_COUNT: 15,
+                DEFAULT_NAME: "FreeBabysittingCallTrump"
             };
 
+            const AI_COLORS = [0, 30, 300, 270]; // Red, Orange, Pink, Purple (HSL hues)
+            const PLAYER_HUE = 120; // Neon Green
+
+            // --- GAME STATE ---
             const state = {
+                phase: 'MENU', // MENU, PLAYING, GAMEOVER
                 camera: { x: 0, y: 0, zoom: 1 },
                 player: null,
                 ais: [],
                 foods: [],
                 mouseX: window.innerWidth / 2,
                 mouseY: window.innerHeight / 2,
-                isBoosting: false
+                isBoosting: false,
+                highScore: parseInt(localStorage.getItem('slitherHighScore')) || 0,
+                serverId: Math.floor(1000 + Math.random() * 9000),
+                nickname: CONFIG.DEFAULT_NAME
             };
 
-            class Snake {
-                constructor(x, y, colorHue, name) {
-                    this.x = x;
-                    this.y = y;
-                    this.angle = 0;
-                    this.colorHue = colorHue;
-                    this.name = name;
-                    this.body = [];
-                    // Start with some length
-                    for(let i=0; i<20; i++) {
-                        this.body.push({x: this.x, y: this.y});
-                    }
-                    this.score = 20;
-                    this.isDead = false;
-                }
+            // --- DOM ELEMENTS ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d', { alpha: false });
+            const minimapCanvas = document.getElementById('minimap');
+            const ctxMinimap = minimapCanvas.getContext('2d');
 
-                update(deltaTime, targetX, targetY, isBoosting) {
-                    if (this.isDead) return;
+            const screens = {
+                menu: document.getElementById('menu-screen'),
+                inGame: document.getElementById('in-game-ui'),
+                gameOver: document.getElementById('game-over-screen'),
+                minimap: document.getElementById('minimap-container')
+            };
 
-                    const dtSec = deltaTime / 1000;
+            // --- UI HANDLERS ---
+            document.getElementById('hs-val').innerText = state.highScore;
+            document.getElementById('server-id').innerText = state.serverId;
 
-                    // Boost logic
-                    let actualBoosting = isBoosting && this.score > 30; // Min score to boost
-                    const speed = actualBoosting ? CONFIG.BASE_SPEED * CONFIG.BOOST_SPEED_MULTI : CONFIG.BASE_SPEED;
+            document.getElementById('fake-app-link').addEventListener('click', () => {
+                alert("App demo offline");
+            });
 
-                    if (actualBoosting) {
-                        // Lose mass over time
-                        const massLossRate = 5; // points per sec
-                        const loss = massLossRate * dtSec;
-                        this.score -= loss;
+            function setPhase(newPhase) {
+                state.phase = newPhase;
+                screens.menu.style.display = 'none';
+                screens.inGame.style.display = 'none';
+                screens.gameOver.style.display = 'none';
+                screens.minimap.style.display = 'none';
 
-                        // Accumulate loss to spawn food
-                        this.boostLossAccumulator = (this.boostLossAccumulator || 0) + loss;
-                        if (this.boostLossAccumulator > 1) {
-                            this.boostLossAccumulator -= 1;
-                            // Drop food at tail
-                            if (this.bodySegments && this.bodySegments.length > 0) {
-                                const tail = this.bodySegments[this.bodySegments.length - 1];
-                                // Spawn food with player's color
-                                spawnFood(tail.x, tail.y, this.colorHue, CONFIG.FOOD_RADIUS * 1.5);
-                            }
-                        }
-                    }
+                if (newPhase === 'MENU') {
+                    screens.menu.style.display = 'flex';
+                    // Optional: reset camera to center to watch map
+                    state.camera.x = 0; state.camera.y = 0;
+                } else if (newPhase === 'PLAYING') {
+                    screens.inGame.style.display = 'block';
+                    screens.minimap.style.display = 'block';
+                } else if (newPhase === 'GAMEOVER') {
+                    screens.gameOver.style.display = 'flex';
+                    screens.minimap.style.display = 'block';
+                    document.getElementById('go-score').innerText = Math.floor(state.player.score);
 
-                    // Calculate desired angle
-                    let targetAngle = Math.atan2(targetY, targetX);
-
-                    // Smoothly rotate towards target angle
-                    let angleDiff = targetAngle - this.angle;
-                    // Normalize angle to -PI to PI
-                    while (angleDiff <= -Math.PI) angleDiff += Math.PI * 2;
-                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-
-                    const maxTurn = CONFIG.TURN_SPEED * dtSec;
-                    if (Math.abs(angleDiff) < maxTurn) {
-                        this.angle = targetAngle;
-                    } else {
-                        this.angle += Math.sign(angleDiff) * maxTurn;
-                    }
-
-                    // Move head
-                    this.x += Math.cos(this.angle) * speed * dtSec;
-                    this.y += Math.sin(this.angle) * speed * dtSec;
-
-                    // Boundary check (die if hitting boundary)
-                    if (Math.hypot(this.x, this.y) > CONFIG.MAP_RADIUS - CONFIG.SNAKE_RADIUS) {
-                        this.die();
-                        return;
-                    }
-
-                    // Update body
-                    let prevX = this.x;
-                    let prevY = this.y;
-
-                    // Add new position to front of history
-                    this.body.unshift({x: prevX, y: prevY});
-
-                    // We need points spaced out by CONFIG.SPACING
-                    let newBody = [];
-                    let currentHistIdx = 0;
-                    let distanceAccumulated = 0;
-
-                    newBody.push({x: this.x, y: this.y}); // Head
-
-                    for (let i = 1; i < this.score; i++) {
-                        let neededDistance = CONFIG.SPACING;
-
-                        while(neededDistance > 0 && currentHistIdx < this.body.length - 1) {
-                            const p1 = this.body[currentHistIdx];
-                            const p2 = this.body[currentHistIdx + 1];
-                            const distToNext = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-
-                            if (distanceAccumulated + distToNext >= neededDistance) {
-                                // Find exact point between p1 and p2
-                                const ratio = (neededDistance - distanceAccumulated) / distToNext;
-                                const px = p1.x + (p2.x - p1.x) * ratio;
-                                const py = p1.y + (p2.y - p1.y) * ratio;
-
-                                newBody.push({x: px, y: py});
-
-                                // Insert this new point into history to start next segment from here
-                                this.body.splice(currentHistIdx + 1, 0, {x: px, y: py});
-                                currentHistIdx++;
-                                distanceAccumulated = 0;
-                                neededDistance = 0; // Found it
-                            } else {
-                                distanceAccumulated += distToNext;
-                                currentHistIdx++;
-                            }
-                        }
-                    }
-
-                    // Prune history to avoid memory leak
-                    if (currentHistIdx < this.body.length) {
-                        this.body = this.body.slice(0, currentHistIdx + 2);
-                    }
-
-                    this.bodySegments = newBody;
-                }
-
-                draw(ctx, camX, camY) {
-                    if (this.isDead || !this.bodySegments) return;
-
-                    const scaleFactor = 1 + (this.score / 100) * 0.1; // Snakes get slightly wider
-                    const radius = CONFIG.SNAKE_RADIUS * scaleFactor;
-
-                    // Draw body from tail to head
-                    for (let i = this.bodySegments.length - 1; i >= 0; i--) {
-                        const seg = this.bodySegments[i];
-                        const sx = seg.x - camX + window.innerWidth / 2;
-                        const sy = seg.y - camY + window.innerHeight / 2;
-
-                        // Don't draw if offscreen
-                        if (sx < -radius || sx > window.innerWidth + radius ||
-                            sy < -radius || sy > window.innerHeight + radius) continue;
-
-                        ctx.beginPath();
-                        ctx.arc(sx, sy, radius, 0, Math.PI * 2);
-
-                        // Glow
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = `hsl(${this.colorHue}, 100%, 50%)`;
-
-                        // Gradient
-                        const gradient = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
-                        if (i === 0) { // Head
-                            gradient.addColorStop(0, '#fff');
-                            gradient.addColorStop(1, `hsl(${this.colorHue}, 100%, 40%)`);
-                        } else {
-                            // Stripes logic based on index
-                            const lightness = (i % 4 === 0) ? 60 : 40;
-                            gradient.addColorStop(0, `hsl(${this.colorHue}, 100%, ${lightness + 10}%)`);
-                            gradient.addColorStop(1, `hsl(${this.colorHue}, 100%, ${lightness - 10}%)`);
-                        }
-
-                        ctx.fillStyle = gradient;
-                        ctx.fill();
-
-                        // Reset shadow for performance
-                        ctx.shadowBlur = 0;
-                    }
-
-                    // Draw eyes
-                    if (this.bodySegments.length > 0) {
-                        const head = this.bodySegments[0];
-                        const hx = head.x - camX + window.innerWidth / 2;
-                        const hy = head.y - camY + window.innerHeight / 2;
-
-                        const eyeOffset = radius * 0.6;
-                        const eyeRadius = radius * 0.3;
-                        const pupilRadius = radius * 0.15;
-
-                        const drawEye = (angleOffset) => {
-                            const ex = hx + Math.cos(this.angle + angleOffset) * eyeOffset;
-                            const ey = hy + Math.sin(this.angle + angleOffset) * eyeOffset;
-
-                            // White
-                            ctx.fillStyle = 'white';
-                            ctx.beginPath();
-                            ctx.arc(ex, ey, eyeRadius, 0, Math.PI * 2);
-                            ctx.fill();
-
-                            // Pupil
-                            const px = ex + Math.cos(this.angle) * (eyeRadius * 0.5);
-                            const py = ey + Math.sin(this.angle) * (eyeRadius * 0.5);
-                            ctx.fillStyle = 'black';
-                            ctx.beginPath();
-                            ctx.arc(px, py, pupilRadius, 0, Math.PI * 2);
-                            ctx.fill();
-                        };
-
-                        drawEye(Math.PI / 4);
-                        drawEye(-Math.PI / 4);
-                    }
-                }
-
-                die() {
-                    this.isDead = true;
-                    // Spawn food from body
-                    if (this.bodySegments) {
-                        for (let i = 0; i < this.bodySegments.length; i += 2) { // don't spawn for every segment to not flood
-                            const seg = this.bodySegments[i];
-                            // Spawn larger glowing food
-                            spawnFood(seg.x + (Math.random()*10-5), seg.y + (Math.random()*10-5), this.colorHue, CONFIG.FOOD_RADIUS * 2);
-                        }
+                    if (state.player.score > state.highScore) {
+                        state.highScore = Math.floor(state.player.score);
+                        localStorage.setItem('slitherHighScore', state.highScore);
+                        document.getElementById('hs-val').innerText = state.highScore;
                     }
                 }
             }
 
-            class AISnake extends Snake {
-                constructor(x, y, colorHue, name) {
-                    super(x, y, colorHue, name);
-                    this.targetX = 0;
-                    this.targetY = 0;
-                    this.stateTimer = 0;
-                    this.behavior = 'wander'; // wander, hunt, evade
-                }
+            function startGame() {
+                let inputName = document.getElementById('nickname-input').value.trim();
+                state.nickname = inputName || CONFIG.DEFAULT_NAME;
+                document.getElementById('player-name-display').innerText = state.nickname;
 
-                updateAI(deltaTime, allSnakes, foods) {
-                    if (this.isDead) return;
+                // Clear state
+                state.ais = [];
+                state.foods = [];
 
-                    this.stateTimer -= deltaTime;
+                // Initial food
+                for(let i=0; i<CONFIG.MAX_FOOD; i++) spawnFood();
 
-                    const headX = this.x;
-                    const headY = this.y;
-                    let targetX = 0;
-                    let targetY = 0;
-                    let isBoosting = false;
+                // Spawn Player
+                state.player = new Snake(0, 0, PLAYER_HUE, state.nickname, true);
 
-                    // Evade logic (prioritize avoiding boundaries and other snakes)
-                    let evadeForceX = 0;
-                    let evadeForceY = 0;
-                    let evading = false;
+                // Spawn AIs
+                for(let i=0; i<CONFIG.AI_COUNT; i++) spawnAI();
 
-                    // Avoid Boundary
-                    const distToCenter = Math.hypot(headX, headY);
-                    if (distToCenter > CONFIG.MAP_RADIUS - 300) {
-                        evadeForceX -= headX; // vector towards center
-                        evadeForceY -= headY;
-                        evading = true;
-                    }
-
-                    // Avoid other snakes' bodies
-                    for (let snake of allSnakes) {
-                        if (snake === this || snake.isDead || !snake.bodySegments) continue;
-
-                        for (let seg of snake.bodySegments) {
-                            const dx = headX - seg.x;
-                            const dy = headY - seg.y;
-                            const dist = Math.hypot(dx, dy);
-
-                            // If very close, steer away
-                            if (dist < 100) {
-                                evadeForceX += (dx / dist) * (100 - dist);
-                                evadeForceY += (dy / dist) * (100 - dist);
-                                evading = true;
-                            }
-                        }
-                    }
-
-                    if (evading) {
-                        this.targetX = evadeForceX;
-                        this.targetY = evadeForceY;
-                        // Boost if really close to something
-                        if (Math.hypot(evadeForceX, evadeForceY) > 50) isBoosting = true;
-                    } else {
-                        // Hunt or Wander
-                        if (this.stateTimer <= 0) {
-                            // Find nearest food
-                            let nearestFood = null;
-                            let minDist = 500; // view range
-
-                            for (let food of foods) {
-                                const dist = Math.hypot(food.x - headX, food.y - headY);
-                                if (dist < minDist) {
-                                    minDist = dist;
-                                    nearestFood = food;
-                                }
-                            }
-
-                            if (nearestFood) {
-                                this.targetX = nearestFood.x - headX;
-                                this.targetY = nearestFood.y - headY;
-                                this.stateTimer = 500; // recalculate soon
-
-                                // Boost if big food and far
-                                if (nearestFood.size > CONFIG.FOOD_RADIUS && minDist > 100) {
-                                    isBoosting = true;
-                                }
-                            } else {
-                                // Wander
-                                const angle = Math.random() * Math.PI * 2;
-                                this.targetX = Math.cos(angle) * 200;
-                                this.targetY = Math.sin(angle) * 200;
-                                this.stateTimer = 2000 + Math.random() * 2000;
-                            }
-                        }
-                    }
-
-                    // Always normalize target
-                    const tDist = Math.hypot(this.targetX, this.targetY);
-                    if (tDist > 0) {
-                        this.update(deltaTime, this.targetX / tDist, this.targetY / tDist, isBoosting);
-                    } else {
-                        this.update(deltaTime, Math.cos(this.angle), Math.sin(this.angle), isBoosting);
-                    }
-                }
+                setPhase('PLAYING');
             }
 
-            // Resize handler
+            document.getElementById('play-btn').addEventListener('click', startGame);
+            document.getElementById('btn-play-again').addEventListener('click', startGame);
+            document.getElementById('btn-menu').addEventListener('click', () => {
+                setPhase('MENU');
+            });
+
+            // --- INPUT ---
             function resize() {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
             }
             window.addEventListener('resize', resize);
+            resize();
 
-            // Input handlers
             window.addEventListener('mousemove', (e) => {
                 state.mouseX = e.clientX;
                 state.mouseY = e.clientY;
@@ -450,47 +460,254 @@
                 state.isBoosting = false;
             });
 
-            // Game core functions required by spec
-            function init() {
-                resize();
-                state.player = new Snake(0, 0, Math.random() * 360, "You");
-
-                // Initial food
-                for(let i=0; i<CONFIG.MAX_FOOD; i++) {
-                    spawnFood();
+            // --- CLASSES ---
+            class Snake {
+                constructor(x, y, colorHue, name, isPlayer = false) {
+                    this.x = x;
+                    this.y = y;
+                    this.angle = Math.random() * Math.PI * 2;
+                    this.colorHue = colorHue;
+                    this.name = name;
+                    this.isPlayer = isPlayer;
+                    this.body = [];
+                    for(let i=0; i<20; i++) this.body.push({x: this.x, y: this.y});
+                    this.score = 20;
+                    this.isDead = false;
                 }
 
-                console.log("Game initialized");
+                update(deltaTime, targetX, targetY, isBoosting) {
+                    if (this.isDead) return;
+
+                    const dtSec = deltaTime / 1000;
+
+                    // Boost logic
+                    let actualBoosting = isBoosting && this.score > 30;
+                    const speed = actualBoosting ? CONFIG.BASE_SPEED * CONFIG.BOOST_SPEED_MULTI : CONFIG.BASE_SPEED;
+
+                    if (actualBoosting) {
+                        const loss = 5 * dtSec;
+                        this.score -= loss;
+                        this.boostLossAccumulator = (this.boostLossAccumulator || 0) + loss;
+                        if (this.boostLossAccumulator > 1) {
+                            this.boostLossAccumulator -= 1;
+                            if (this.bodySegments && this.bodySegments.length > 0) {
+                                const tail = this.bodySegments[this.bodySegments.length - 1];
+                                spawnFood(tail.x, tail.y, this.colorHue, CONFIG.FOOD_RADIUS * 1.5);
+                            }
+                        }
+                    }
+
+                    // Turning
+                    let targetAngle = Math.atan2(targetY, targetX);
+                    let angleDiff = targetAngle - this.angle;
+                    while (angleDiff <= -Math.PI) angleDiff += Math.PI * 2;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+                    const maxTurn = CONFIG.TURN_SPEED * dtSec;
+                    if (Math.abs(angleDiff) < maxTurn) {
+                        this.angle = targetAngle;
+                    } else {
+                        this.angle += Math.sign(angleDiff) * maxTurn;
+                    }
+
+                    // Move
+                    this.x += Math.cos(this.angle) * speed * dtSec;
+                    this.y += Math.sin(this.angle) * speed * dtSec;
+
+                    // Boundary check
+                    if (Math.hypot(this.x, this.y) > CONFIG.MAP_RADIUS - CONFIG.SNAKE_RADIUS) {
+                        this.die();
+                        return;
+                    }
+
+                    // Body update
+                    this.body.unshift({x: this.x, y: this.y});
+
+                    let newBody = [];
+                    let currentHistIdx = 0;
+                    let distanceAccumulated = 0;
+                    newBody.push({x: this.x, y: this.y});
+
+                    for (let i = 1; i < this.score; i++) {
+                        let neededDistance = CONFIG.SPACING;
+                        while(neededDistance > 0 && currentHistIdx < this.body.length - 1) {
+                            const p1 = this.body[currentHistIdx];
+                            const p2 = this.body[currentHistIdx + 1];
+                            const distToNext = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
+                            if (distanceAccumulated + distToNext >= neededDistance) {
+                                const ratio = (neededDistance - distanceAccumulated) / distToNext;
+                                const px = p1.x + (p2.x - p1.x) * ratio;
+                                const py = p1.y + (p2.y - p1.y) * ratio;
+                                newBody.push({x: px, y: py});
+                                this.body.splice(currentHistIdx + 1, 0, {x: px, y: py});
+                                currentHistIdx++;
+                                distanceAccumulated = 0;
+                                neededDistance = 0;
+                            } else {
+                                distanceAccumulated += distToNext;
+                                currentHistIdx++;
+                            }
+                        }
+                    }
+
+                    if (currentHistIdx < this.body.length) {
+                        this.body = this.body.slice(0, currentHistIdx + 2);
+                    }
+                    this.bodySegments = newBody;
+                }
+
+                draw(ctx, camX, camY) {
+                    if (this.isDead || !this.bodySegments) return;
+
+                    const scaleFactor = 1 + (this.score / 200) * 0.1;
+                    const radius = CONFIG.SNAKE_RADIUS * scaleFactor;
+
+                    for (let i = this.bodySegments.length - 1; i >= 0; i--) {
+                        const seg = this.bodySegments[i];
+                        const sx = seg.x - camX + window.innerWidth / 2;
+                        const sy = seg.y - camY + window.innerHeight / 2;
+
+                        if (sx < -radius || sx > window.innerWidth + radius ||
+                            sy < -radius || sy > window.innerHeight + radius) continue;
+
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = `hsl(${this.colorHue}, 100%, 50%)`;
+
+                        const gradient = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
+                        if (i === 0) {
+                            gradient.addColorStop(0, '#fff');
+                            gradient.addColorStop(1, `hsl(${this.colorHue}, 100%, 40%)`);
+                        } else {
+                            const lightness = (i % 4 === 0) ? 60 : 40;
+                            gradient.addColorStop(0, `hsl(${this.colorHue}, 100%, ${lightness + 10}%)`);
+                            gradient.addColorStop(1, `hsl(${this.colorHue}, 100%, ${lightness - 10}%)`);
+                        }
+                        ctx.fillStyle = gradient;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+
+                    // Eyes
+                    if (this.bodySegments.length > 0) {
+                        const hx = this.bodySegments[0].x - camX + window.innerWidth / 2;
+                        const hy = this.bodySegments[0].y - camY + window.innerHeight / 2;
+                        const eyeOffset = radius * 0.6;
+                        const eyeRadius = radius * 0.3;
+                        const pupilRadius = radius * 0.15;
+
+                        const drawEye = (angleOffset) => {
+                            const ex = hx + Math.cos(this.angle + angleOffset) * eyeOffset;
+                            const ey = hy + Math.sin(this.angle + angleOffset) * eyeOffset;
+                            ctx.fillStyle = 'white';
+                            ctx.beginPath(); ctx.arc(ex, ey, eyeRadius, 0, Math.PI*2); ctx.fill();
+                            const px = ex + Math.cos(this.angle) * (eyeRadius * 0.5);
+                            const py = ey + Math.sin(this.angle) * (eyeRadius * 0.5);
+                            ctx.fillStyle = 'black';
+                            ctx.beginPath(); ctx.arc(px, py, pupilRadius, 0, Math.PI*2); ctx.fill();
+                        };
+                        drawEye(Math.PI / 4);
+                        drawEye(-Math.PI / 4);
+
+                        // Draw Name Above Head
+                        ctx.fillStyle = 'white';
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 3;
+                        ctx.font = '14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.strokeText(this.name, hx, hy - radius - 10);
+                        ctx.fillText(this.name, hx, hy - radius - 10);
+                    }
+                }
+
+                die() {
+                    this.isDead = true;
+                    if (this.bodySegments) {
+                        for (let i = 0; i < this.bodySegments.length; i += 2) {
+                            const seg = this.bodySegments[i];
+                            spawnFood(seg.x + (Math.random()*10-5), seg.y + (Math.random()*10-5), this.colorHue, CONFIG.FOOD_RADIUS * 2);
+                        }
+                    }
+                    if (this.isPlayer) {
+                        setPhase('GAMEOVER');
+                    }
+                }
             }
 
-            function handleInput() {
-                // Determine target based on mouse position relative to center of screen
-                const cx = canvas.width / 2;
-                const cy = canvas.height / 2;
-                const dx = state.mouseX - cx;
-                const dy = state.mouseY - cy;
+            class AISnake extends Snake {
+                constructor(x, y, colorHue, name) {
+                    super(x, y, colorHue, name, false);
+                    this.targetX = 0;
+                    this.targetY = 0;
+                    this.stateTimer = 0;
+                }
 
-                // We don't set player x/y directly, we let the snake update handle it based on dx/dy
-                return {dx, dy};
+                updateAI(deltaTime, allSnakes, foods) {
+                    if (this.isDead) return;
+
+                    this.stateTimer -= deltaTime;
+                    let targetX = 0, targetY = 0, isBoosting = false;
+                    let evading = false, evadeForceX = 0, evadeForceY = 0;
+
+                    // Avoid boundary
+                    if (Math.hypot(this.x, this.y) > CONFIG.MAP_RADIUS - 300) {
+                        evadeForceX -= this.x; evadeForceY -= this.y; evading = true;
+                    }
+
+                    // Avoid other bodies
+                    for (let s of allSnakes) {
+                        if (s === this || s.isDead || !s.bodySegments) continue;
+                        for (let seg of s.bodySegments) {
+                            const dx = this.x - seg.x, dy = this.y - seg.y;
+                            const dist = Math.hypot(dx, dy);
+                            if (dist < 100) {
+                                evadeForceX += (dx/dist)*(100-dist); evadeForceY += (dy/dist)*(100-dist); evading = true;
+                            }
+                        }
+                    }
+
+                    if (evading) {
+                        this.targetX = evadeForceX; this.targetY = evadeForceY;
+                        if (Math.hypot(evadeForceX, evadeForceY) > 50) isBoosting = true;
+                    } else {
+                        if (this.stateTimer <= 0) {
+                            let nearestFood = null, minDist = 500;
+                            for (let f of foods) {
+                                const d = Math.hypot(f.x - this.x, f.y - this.y);
+                                if (d < minDist) { minDist = d; nearestFood = f; }
+                            }
+                            if (nearestFood) {
+                                this.targetX = nearestFood.x - this.x; this.targetY = nearestFood.y - this.y;
+                                this.stateTimer = 500;
+                                if (nearestFood.size > CONFIG.FOOD_RADIUS && minDist > 100) isBoosting = true;
+                            } else {
+                                const a = Math.random() * Math.PI * 2;
+                                this.targetX = Math.cos(a)*200; this.targetY = Math.sin(a)*200;
+                                this.stateTimer = 2000 + Math.random()*2000;
+                            }
+                        }
+                    }
+
+                    const tDist = Math.hypot(this.targetX, this.targetY);
+                    if (tDist > 0) this.update(deltaTime, this.targetX/tDist, this.targetY/tDist, isBoosting);
+                    else this.update(deltaTime, Math.cos(this.angle), Math.sin(this.angle), isBoosting);
+                }
             }
 
+            // --- ENGINE FUNCTIONS ---
             function spawnFood(x, y, colorHue, size) {
-                if (state.foods.length >= CONFIG.MAX_FOOD && !x) return; // Only limit random food
-
-                let foodX = x;
-                let foodY = y;
-
-                if (foodX === undefined) {
-                    // Random position within map
+                if (state.foods.length >= CONFIG.MAX_FOOD && x === undefined) return;
+                let fX = x, fY = y;
+                if (fX === undefined) {
                     const angle = Math.random() * Math.PI * 2;
                     const r = Math.sqrt(Math.random()) * (CONFIG.MAP_RADIUS - 50);
-                    foodX = Math.cos(angle) * r;
-                    foodY = Math.sin(angle) * r;
+                    fX = Math.cos(angle) * r; fY = Math.sin(angle) * r;
                 }
-
                 state.foods.push({
-                    x: foodX,
-                    y: foodY,
+                    x: fX, y: fY,
                     hue: colorHue !== undefined ? colorHue : Math.random() * 360,
                     size: size || CONFIG.FOOD_RADIUS,
                     wobble: Math.random() * Math.PI * 2
@@ -500,41 +717,30 @@
             function spawnAI() {
                 const angle = Math.random() * Math.PI * 2;
                 const r = Math.sqrt(Math.random()) * (CONFIG.MAP_RADIUS - 200);
-                const x = Math.cos(angle) * r;
-                const y = Math.sin(angle) * r;
-                const ai = new AISnake(x, y, Math.random() * 360, "AI_" + Math.floor(Math.random() * 1000));
-
-                // Give AI random starting length
-                ai.score = 20 + Math.random() * 200;
-
+                const hue = AI_COLORS[Math.floor(Math.random() * AI_COLORS.length)];
+                const names = ["Bot_Gamer", "SlitherPro", "SnakeEater", "Noob123", "Venom", "DangerNoodle"];
+                const ai = new AISnake(Math.cos(angle)*r, Math.sin(angle)*r, hue, names[Math.floor(Math.random()*names.length)]);
+                ai.score = 20 + Math.random() * 300;
                 state.ais.push(ai);
             }
 
-            // Centralized collision detection
             function checkCollisions(allSnakes) {
-                // Check head-to-body collisions
                 for (let i = 0; i < allSnakes.length; i++) {
-                    const snake1 = allSnakes[i];
-                    if (snake1.isDead) continue;
-
-                    const head1 = {x: snake1.x, y: snake1.y};
-                    const radius1 = CONFIG.SNAKE_RADIUS * (1 + (snake1.score / 100) * 0.1);
+                    const s1 = allSnakes[i];
+                    if (s1.isDead) continue;
+                    const h1 = {x: s1.x, y: s1.y};
+                    const r1 = CONFIG.SNAKE_RADIUS * (1 + (s1.score/200)*0.1);
 
                     for (let j = 0; j < allSnakes.length; j++) {
-                        if (i === j) continue; // Don't check against self
+                        if (i === j) continue; // NEVER die from own body
+                        const s2 = allSnakes[j];
+                        if (s2.isDead || !s2.bodySegments) continue;
+                        const r2 = CONFIG.SNAKE_RADIUS * (1 + (s2.score/200)*0.1);
+                        const cDist = r1 + r2 * 0.8;
 
-                        const snake2 = allSnakes[j];
-                        if (snake2.isDead || !snake2.bodySegments) continue;
-
-                        const radius2 = CONFIG.SNAKE_RADIUS * (1 + (snake2.score / 100) * 0.1);
-                        const collisionDist = radius1 + radius2 * 0.8; // slightly forgiving
-
-                        // Start from index 3 or 4 to prevent head-to-head immediately triggering if they spawn close
-                        for (let k = 3; k < snake2.bodySegments.length; k++) {
-                            const seg2 = snake2.bodySegments[k];
-
-                            if (Math.hypot(head1.x - seg2.x, head1.y - seg2.y) < collisionDist) {
-                                snake1.die();
+                        for (let k = 3; k < s2.bodySegments.length; k++) {
+                            if (Math.hypot(h1.x - s2.bodySegments[k].x, h1.y - s2.bodySegments[k].y) < cDist) {
+                                s1.die();
                                 break;
                             }
                         }
@@ -544,290 +750,194 @@
 
             function handleEating(snake) {
                 if (snake.isDead) return;
-
-                const headX = snake.x;
-                const headY = snake.y;
-                const eatRadius = CONFIG.SNAKE_RADIUS * (1 + (snake.score / 100) * 0.1) + 10;
-
+                const r = CONFIG.SNAKE_RADIUS * (1 + (snake.score/200)*0.1) + 10;
                 for (let i = state.foods.length - 1; i >= 0; i--) {
-                    const food = state.foods[i];
-                    const dist = Math.hypot(food.x - headX, food.y - headY);
-
-                    if (dist < eatRadius) {
-                        // Eat it
-                        snake.score += (food.size === CONFIG.FOOD_RADIUS) ? 1 : 5; // bigger food = more score
+                    const f = state.foods[i];
+                    if (Math.hypot(f.x - snake.x, f.y - snake.y) < r) {
+                        snake.score += (f.size === CONFIG.FOOD_RADIUS) ? 1 : 5;
                         state.foods.splice(i, 1);
-
-                        // Spawn replacement if it was random food
-                        if (state.foods.length < CONFIG.MAX_FOOD) {
-                            spawnFood();
-                        }
+                        if (state.foods.length < CONFIG.MAX_FOOD) spawnFood();
                     }
                 }
             }
 
             function update(deltaTime) {
-                const {dx, dy} = handleInput();
-
-                let allActiveSnakes = [];
-                if (state.player && !state.player.isDead) allActiveSnakes.push(state.player);
-                for (let ai of state.ais) {
-                    if (!ai.isDead) allActiveSnakes.push(ai);
+                // If in menu, let's just make camera slowly drift
+                if (state.phase === 'MENU') {
+                    state.camera.x += 20 * (deltaTime/1000);
+                    state.camera.y += 10 * (deltaTime/1000);
+                    // Update food wobble in menu too
+                    const timeSec = performance.now() / 1000;
+                    for (let f of state.foods) f.currentWobble = Math.sin(timeSec*5 + f.wobble)*2;
+                    return; // Don't process game logic
                 }
 
-                // Update Player
+                if (state.phase !== 'PLAYING') return;
+
+                const cx = canvas.width / 2, cy = canvas.height / 2;
+                const dx = state.mouseX - cx, dy = state.mouseY - cy;
+
+                let activeSnakes = [];
+                if (state.player && !state.player.isDead) activeSnakes.push(state.player);
+                for (let ai of state.ais) if (!ai.isDead) activeSnakes.push(ai);
+
+                // Player Update
                 if (state.player && !state.player.isDead) {
                     state.player.update(deltaTime, dx, dy, state.isBoosting);
-
-                    // Smooth camera follow
                     state.camera.x += (state.player.x - state.camera.x) * 0.1;
                     state.camera.y += (state.player.y - state.camera.y) * 0.1;
-
-                    // Update UI Score
-                    document.getElementById('score').innerText = Math.floor(state.player.score);
-
                     handleEating(state.player);
-                } else if (state.player && state.player.isDead) {
-                     document.getElementById('score').innerText = "Game Over - Refresh to restart";
                 }
 
-                // Update AI
+                // AI Update
                 for (let i = state.ais.length - 1; i >= 0; i--) {
                     const ai = state.ais[i];
                     if (!ai.isDead) {
-                        ai.updateAI(deltaTime, allActiveSnakes, state.foods);
+                        ai.updateAI(deltaTime, activeSnakes, state.foods);
                         handleEating(ai);
                     } else {
-                        // AI Respawn logic
                         if (!ai.deathTime) ai.deathTime = performance.now();
-                        if (performance.now() - ai.deathTime > 10000) { // 10 seconds
+                        if (performance.now() - ai.deathTime > 7000) {
                             state.ais.splice(i, 1);
-                            spawnAI(); // Respawn a new one
+                            spawnAI();
                         }
                     }
                 }
+                while (state.ais.length < CONFIG.AI_COUNT) spawnAI();
 
-                // Initial AI population
-                while (state.ais.length < 15) {
-                    spawnAI();
-                }
+                checkCollisions(activeSnakes);
 
-                // Check all collisions
-                checkCollisions(allActiveSnakes);
-
-                // Update food wobble
                 const timeSec = performance.now() / 1000;
-                for (let food of state.foods) {
-                    food.currentWobble = Math.sin(timeSec * 5 + food.wobble) * 2;
-                }
+                for (let f of state.foods) f.currentWobble = Math.sin(timeSec*5 + f.wobble)*2;
+
+                updateUI(activeSnakes);
             }
 
-            function drawFoods(ctx, camX, camY) {
-                for (let food of state.foods) {
-                    const sx = food.x - camX + window.innerWidth / 2;
-                    const sy = food.y - camY + window.innerHeight / 2;
-
-                    // Frustum culling
-                    if (sx < -20 || sx > window.innerWidth + 20 ||
-                        sy < -20 || sy > window.innerHeight + 20) continue;
-
-                    ctx.beginPath();
-                    // Give food a slight pulsing effect
-                    const radius = food.size + (food.currentWobble || 0);
-                    ctx.arc(sx, sy, Math.max(2, radius), 0, Math.PI * 2);
-
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = `hsl(${food.hue}, 100%, 50%)`;
-
-                    ctx.fillStyle = `hsl(${food.hue}, 100%, 70%)`;
-                    ctx.fill();
-                }
-                ctx.shadowBlur = 0;
-            }
-
-            function drawMinimap(ctxMinimap, player, ais, foods) {
-                const w = ctxMinimap.canvas.width;
-                const h = ctxMinimap.canvas.height;
-                const r = w / 2;
-
-                ctxMinimap.clearRect(0, 0, w, h);
-
-                // Draw map boundary
-                ctxMinimap.beginPath();
-                ctxMinimap.arc(r, r, r, 0, Math.PI * 2);
-                ctxMinimap.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                ctxMinimap.fill();
-
-                const mapScale = r / CONFIG.MAP_RADIUS;
-
-                // Draw foods (just small dots)
-                ctxMinimap.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                for(let food of foods) {
-                    // skip drawing all foods on minimap to save perf, draw maybe every 10th
-                    if(Math.random() > 0.1) continue;
-                    const mx = r + food.x * mapScale;
-                    const my = r + food.y * mapScale;
-                    ctxMinimap.fillRect(mx, my, 1, 1);
+            function updateUI(activeSnakes) {
+                if (state.player && !state.player.isDead) {
+                    document.getElementById('ui-length').innerText = Math.floor(state.player.score);
                 }
 
-                // Draw AIs
-                for (let ai of ais) {
-                    if (ai.isDead) continue;
-                    const px = r + ai.x * mapScale;
-                    const py = r + ai.y * mapScale;
-                    ctxMinimap.beginPath();
-                    ctxMinimap.arc(px, py, 2, 0, Math.PI * 2);
-                    ctxMinimap.fillStyle = 'rgba(255, 100, 100, 0.8)';
-                    ctxMinimap.fill();
+                // Sort for rank
+                activeSnakes.sort((a,b) => b.score - a.score);
+
+                if (state.player && !state.player.isDead) {
+                    const rank = activeSnakes.indexOf(state.player) + 1;
+                    document.getElementById('ui-rank').innerText = rank;
+                    document.getElementById('ui-total').innerText = activeSnakes.length;
                 }
 
-                // Draw player
-                if (player && !player.isDead) {
-                    const px = r + player.x * mapScale;
-                    const py = r + player.y * mapScale;
-                    ctxMinimap.beginPath();
-                    ctxMinimap.arc(px, py, 3, 0, Math.PI * 2);
-                    ctxMinimap.fillStyle = '#fff';
-                    ctxMinimap.fill();
-                }
-            }
-
-            function drawHexagons(ctx, camX, camY, canvasWidth, canvasHeight, hexSize) {
-                const hexHeight = hexSize * Math.sqrt(3);
-                const hexWidth = hexSize * 2;
-                const horizSpacing = hexWidth * 0.75;
-                const vertSpacing = hexHeight;
-
-                const left = camX - canvasWidth / 2;
-                const right = camX + canvasWidth / 2;
-                const top = camY - canvasHeight / 2;
-                const bottom = camY + canvasHeight / 2;
-
-                const startCol = Math.floor(left / horizSpacing) - 1;
-                const endCol = Math.ceil(right / horizSpacing) + 1;
-
-                ctx.beginPath();
-                for (let col = startCol; col <= endCol; col++) {
-                    const x = col * horizSpacing;
-                    const offset = (col % 2 !== 0) ? vertSpacing / 2 : 0;
-
-                    const startRow = Math.floor((top - offset) / vertSpacing) - 1;
-                    const endRow = Math.ceil((bottom - offset) / vertSpacing) + 1;
-
-                    for (let row = startRow; row <= endRow; row++) {
-                        const y = row * vertSpacing + offset;
-
-                        // Screen coordinates
-                        const sx = x - left;
-                        const sy = y - top;
-
-                        ctx.moveTo(sx + hexSize, sy);
-                        ctx.lineTo(sx + hexSize / 2, sy + hexHeight / 2);
-                        ctx.lineTo(sx - hexSize / 2, sy + hexHeight / 2);
-                        ctx.lineTo(sx - hexSize, sy);
-                        ctx.lineTo(sx - hexSize / 2, sy - hexHeight / 2);
-                        ctx.lineTo(sx + hexSize / 2, sy - hexHeight / 2);
-                        ctx.lineTo(sx + hexSize, sy);
-                    }
-                }
-                ctx.strokeStyle = CONFIG.GRID_COLOR;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-
-            function drawBoundary(ctx, camX, camY, canvasWidth, canvasHeight, radius) {
-                const cx = -camX + canvasWidth / 2;
-                const cy = -camY + canvasHeight / 2;
-
-                // Draw red boundary line
-                ctx.beginPath();
-                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-                ctx.strokeStyle = CONFIG.BOUNDARY_COLOR;
-                ctx.lineWidth = 10;
-                ctx.stroke();
-
-                // Darken outside area using evenodd rule
-                ctx.beginPath();
-                // Outer large rectangle
-                ctx.rect(0, 0, canvasWidth, canvasHeight);
-                // Inner map circle
-                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fill('evenodd');
-            }
-
-            function updateLeaderboard() {
-                const list = document.getElementById('top-players');
+                const list = document.getElementById('leaderboard-list');
                 list.innerHTML = '';
-
-                // Combine player and AIs
-                let entities = [];
-                if (state.player && !state.player.isDead) entities.push(state.player);
-                for (let ai of state.ais) {
-                    if (!ai.isDead) entities.push(ai);
-                }
-
-                entities.sort((a, b) => b.score - a.score);
-
-                for(let i=0; i < Math.min(3, entities.length); i++) {
+                for(let i=0; i<Math.min(5, activeSnakes.length); i++) {
+                    const s = activeSnakes[i];
                     const li = document.createElement('li');
-                    const isPlayer = entities[i] === state.player;
-                    li.innerHTML = `<span style="color: ${isPlayer ? '#ffff00' : '#fff'}">#${i+1} ${entities[i].name} - ${Math.floor(entities[i].score)}</span>`;
+                    const color = s === state.player ? '#ffff00' : '#fff';
+                    li.innerHTML = `<span style="color: ${color}">#${i+1}</span> <span class="lb-name" style="color: ${color}">${s.name}</span> <span style="color: ${color}">${Math.floor(s.score)}</span>`;
                     list.appendChild(li);
                 }
             }
 
+            function drawHexagons(ctx, camX, camY) {
+                const hSize = CONFIG.HEX_SIZE;
+                const hexH = hSize * Math.sqrt(3), hexW = hSize * 2;
+                const hSpace = hexW * 0.75, vSpace = hexH;
+                const left = camX - canvas.width/2, right = camX + canvas.width/2;
+                const top = camY - canvas.height/2, bottom = camY + canvas.height/2;
+
+                const startCol = Math.floor(left/hSpace)-1, endCol = Math.ceil(right/hSpace)+1;
+
+                ctx.beginPath();
+                for (let col = startCol; col <= endCol; col++) {
+                    const x = col * hSpace;
+                    const offset = (col%2 !== 0) ? vSpace/2 : 0;
+                    const startRow = Math.floor((top-offset)/vSpace)-1, endRow = Math.ceil((bottom-offset)/vSpace)+1;
+
+                    for (let row = startRow; row <= endRow; row++) {
+                        const y = row * vSpace + offset;
+                        const sx = x - left, sy = y - top;
+                        ctx.moveTo(sx+hSize, sy); ctx.lineTo(sx+hSize/2, sy+hexH/2);
+                        ctx.lineTo(sx-hSize/2, sy+hexH/2); ctx.lineTo(sx-hSize, sy);
+                        ctx.lineTo(sx-hSize/2, sy-hexH/2); ctx.lineTo(sx+hSize/2, sy-hexH/2);
+                        ctx.lineTo(sx+hSize, sy);
+                    }
+                }
+                ctx.strokeStyle = CONFIG.GRID_COLOR; ctx.lineWidth = 1; ctx.stroke();
+            }
+
             function render() {
-                // Clear background
                 ctx.fillStyle = CONFIG.BG_COLOR;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Draw map features
-                drawHexagons(ctx, state.camera.x, state.camera.y, canvas.width, canvas.height, CONFIG.HEX_SIZE);
-                drawBoundary(ctx, state.camera.x, state.camera.y, canvas.width, canvas.height, CONFIG.MAP_RADIUS);
+                drawHexagons(ctx, state.camera.x, state.camera.y);
 
-                // Draw foods
-                drawFoods(ctx, state.camera.x, state.camera.y);
+                // Draw Boundary
+                const cx = -state.camera.x + canvas.width/2, cy = -state.camera.y + canvas.height/2;
+                ctx.beginPath(); ctx.arc(cx, cy, CONFIG.MAP_RADIUS, 0, Math.PI*2);
+                ctx.strokeStyle = CONFIG.BOUNDARY_COLOR; ctx.lineWidth = 15; ctx.stroke();
+                ctx.beginPath(); ctx.rect(0,0,canvas.width,canvas.height); ctx.arc(cx,cy,CONFIG.MAP_RADIUS,0,Math.PI*2);
+                ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fill('evenodd');
 
-                // Draw AIs
-                for (let ai of state.ais) {
-                    ai.draw(ctx, state.camera.x, state.camera.y);
+                // Draw Foods
+                for (let f of state.foods) {
+                    const sx = f.x - state.camera.x + canvas.width/2, sy = f.y - state.camera.y + canvas.height/2;
+                    if (sx < -20 || sx > canvas.width+20 || sy < -20 || sy > canvas.height+20) continue;
+                    ctx.beginPath(); ctx.arc(sx, sy, Math.max(2, f.size + (f.currentWobble||0)), 0, Math.PI*2);
+                    ctx.shadowBlur = 10; ctx.shadowColor = `hsl(${f.hue},100%,50%)`;
+                    ctx.fillStyle = `hsl(${f.hue},100%,70%)`; ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+
+                // Draw Snakes
+                if (state.phase !== 'MENU') {
+                    for (let ai of state.ais) ai.draw(ctx, state.camera.x, state.camera.y);
+                    if (state.player) state.player.draw(ctx, state.camera.x, state.camera.y);
                 }
 
-                // Draw player
-                if (state.player) {
-                    state.player.draw(ctx, state.camera.x, state.camera.y);
+                // Minimap
+                if (state.phase === 'PLAYING') {
+                    minimapCanvas.width = minimapCanvas.parentElement.clientWidth;
+                    minimapCanvas.height = minimapCanvas.parentElement.clientHeight;
+                    const w = minimapCanvas.width, r = w/2;
+                    ctxMinimap.clearRect(0,0,w,w);
+                    ctxMinimap.beginPath(); ctxMinimap.arc(r,r,r,0,Math.PI*2);
+                    ctxMinimap.fillStyle = 'rgba(0,0,0,0.5)'; ctxMinimap.fill();
+
+                    const mScale = r / CONFIG.MAP_RADIUS;
+
+                    ctxMinimap.fillStyle = 'rgba(255,255,255,0.3)';
+                    for(let f of state.foods) {
+                        if(Math.random()>0.1) continue;
+                        ctxMinimap.fillRect(r+f.x*mScale, r+f.y*mScale, 1, 1);
+                    }
+
+                    for (let ai of state.ais) {
+                        if(ai.isDead) continue;
+                        ctxMinimap.beginPath(); ctxMinimap.arc(r+ai.x*mScale, r+ai.y*mScale, 2, 0, Math.PI*2);
+                        ctxMinimap.fillStyle = 'rgba(255,100,100,0.8)'; ctxMinimap.fill();
+                    }
+
+                    if (state.player && !state.player.isDead) {
+                        ctxMinimap.beginPath(); ctxMinimap.arc(r+state.player.x*mScale, r+state.player.y*mScale, 3, 0, Math.PI*2);
+                        ctxMinimap.fillStyle = '#0f0'; ctxMinimap.fill();
+                    }
                 }
-
-                // Draw Minimap
-                const minimapCanvas = document.getElementById('minimap');
-                minimapCanvas.width = document.getElementById('minimap-container').clientWidth;
-                minimapCanvas.height = document.getElementById('minimap-container').clientHeight;
-                const ctxMinimap = minimapCanvas.getContext('2d');
-                drawMinimap(ctxMinimap, state.player, state.ais, state.foods);
-
-                // Leaderboard
-                updateLeaderboard();
             }
 
-            // Main game loop
             let lastTime = 0;
             function gameLoop(timestamp) {
-                const deltaTime = timestamp - lastTime || 0;
+                const dt = timestamp - lastTime || 0;
                 lastTime = timestamp;
-
-                // Max delta time to prevent large jumps when tab is inactive
-                if (deltaTime < 100) {
-                    handleInput();
-                    update(deltaTime);
+                if (dt < 100) {
+                    update(dt);
                     render();
                 }
-
                 requestAnimationFrame(gameLoop);
             }
 
-            // Bootstrap
-            init();
+            // --- INIT ---
+            for(let i=0; i<300; i++) spawnFood(); // Populate background foods for menu
+            setPhase('MENU');
             requestAnimationFrame(gameLoop);
         })();
     </script>
