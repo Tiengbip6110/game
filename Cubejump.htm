@@ -1832,7 +1832,7 @@ select:focus-visible {
             <div class="circuit-bg" aria-hidden="true"></div>
             <canvas id="gameCanvas"></canvas>
             <div class="scene-vignette"></div>
-            <button id="removeAdsBtn" class="remove-ads-btn hidden" type="button" aria-label="Remove ads">
+            <button id="removeAdsBtn" class="remove-ads-btn" type="button" aria-label="Remove ads">
             <span class="remove-ads-icon" aria-hidden="true">
                 <svg viewBox="0 0 64 64" focusable="false">
                     <rect x="10" y="17" width="44" height="30" rx="9" fill="#ffffff"></rect>
@@ -1853,6 +1853,16 @@ select:focus-visible {
             </button>
             <div id="settingsPanel" class="settings-panel hidden" role="dialog" aria-modal="false" aria-labelledby="settingsPanelTitle" aria-hidden="true">
                 <h2 id="settingsPanelTitle" class="settings-title">Cài đặt</h2>
+
+                <button id="langToggleBtn" class="settings-action-btn" type="button" aria-label="Chuyển ngôn ngữ">
+                    <span id="langToggleFrom">Tiếng Việt</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 7h9.2l-2.8-2.8L14.8 3 20 8.2l-5.2 5.1-1.4-1.4L16.2 9H7Zm10 8H7.8l2.8 2.8-1.4 1.4L4 14.8l5.2-5.1 1.4 1.4L7.8 13H17Z"></path>
+                    </svg>
+                    <span id="langToggleLabel">English</span>
+                </button>
+                <a class="settings-privacy-link" href="https://cubejump.app/privacy.html" target="_blank" rel="noopener" style="display:block; text-align:center; margin-top:20px; color:#ef233c; font-weight:bold;">Privacy Policy</a>
+
                 <button id="langToggleBtn" class="settings-action-btn" type="button" aria-label="Chuyển ngôn ngữ">
                     <span id="langToggleFrom">Tiếng Việt</span>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1903,7 +1913,7 @@ select:focus-visible {
             <div class="gameover-simple">
                 <div class="gameover-scores">
                     <div class="gameover-score-main">
-                        <span id="scoreLabel" class="gameover-label">?i?m</span>
+                        <span id="scoreLabel" class="gameover-label">Điểm</span>
                         <strong id="finalScore" class="gameover-value">0</strong>
                     </div>
                     <div class="gameover-score-best">
@@ -8363,9 +8373,13 @@ ${error.message}` : "";
 
     init();
 
+
+
 // --- PORTED V2 UI LOGIC ---
 
-// 1. Settings Panel
+let roomDemoTickAt = 0;
+
+// Settings Panel
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsPanel = document.getElementById("settingsPanel");
 
@@ -8384,7 +8398,22 @@ document.addEventListener("pointerdown", (e) => {
     }
 });
 
-// 2. Sound Toggle
+// Language Toggle
+const langToggleBtnV2 = document.getElementById("langToggleBtn");
+if (langToggleBtnV2) {
+    langToggleBtnV2.addEventListener("click", () => {
+        if (typeof toggleLocale === 'function') toggleLocale();
+        const lbl = document.getElementById("langToggleLabel");
+        const frm = document.getElementById("langToggleFrom");
+        if (lbl && frm) {
+            const isVi = lbl.textContent === "English";
+            lbl.textContent = isVi ? "Tiếng Việt" : "English";
+            frm.textContent = isVi ? "English" : "Tiếng Việt";
+        }
+    });
+}
+
+// Sound Toggle
 const soundToggleBtn = document.getElementById("soundToggleBtn");
 const gameplaySoundToggleBtn = document.getElementById("gameplaySoundToggleBtn");
 const gameoverSoundToggleBtn = document.getElementById("gameoverSoundToggleBtn");
@@ -8393,6 +8422,8 @@ let soundEnabled = localStorage.getItem("cubeJumpSoundEnabled") !== "false";
 function updateSoundUI() {
     const txt = soundEnabled ? "Sound On" : "Sound Off";
     if (soundToggleBtn) soundToggleBtn.textContent = txt;
+    if (gameplaySoundToggleBtn) gameplaySoundToggleBtn.textContent = txt;
+    if (gameoverSoundToggleBtn) gameoverSoundToggleBtn.textContent = txt;
 }
 function toggleSound() {
     soundEnabled = !soundEnabled;
@@ -8400,9 +8431,29 @@ function toggleSound() {
     updateSoundUI();
 }
 if (soundToggleBtn) soundToggleBtn.addEventListener("click", toggleSound);
+if (gameplaySoundToggleBtn) gameplaySoundToggleBtn.addEventListener("click", toggleSound);
+if (gameoverSoundToggleBtn) gameoverSoundToggleBtn.addEventListener("click", toggleSound);
 updateSoundUI();
 
-// 3. Remove Ads Fake Logic
+// Game Over Menu Buttons
+const gameoverMenuBtn = document.getElementById("menuBtn");
+const gameoverMenuPopup = document.getElementById("gameoverMenuPopup");
+const gameoverLeaveRoomBtn = document.getElementById("gameoverLeaveRoomBtn");
+
+if (gameoverMenuBtn && gameoverMenuPopup) {
+    gameoverMenuBtn.addEventListener("click", (e) => {
+        gameoverMenuPopup.classList.toggle("hidden");
+        e.stopPropagation();
+    });
+}
+if (gameoverLeaveRoomBtn) {
+    gameoverLeaveRoomBtn.addEventListener("click", () => {
+        if (typeof leaveCurrentRoom === 'function') leaveCurrentRoom();
+        if (typeof showMenu === 'function') showMenu();
+    });
+}
+
+// Remove Ads
 const removeAdsBtn = document.getElementById("removeAdsBtn");
 let adsRemoved = localStorage.getItem("cubeJumpNoAds") === "true";
 
@@ -8420,7 +8471,6 @@ function updateAdsUI() {
 }
 
 if (removeAdsBtn) {
-    removeAdsBtn.classList.remove("hidden");
     removeAdsBtn.addEventListener("click", () => {
         if (!adsRemoved) {
             alert("This is a demo. In real version, purchase would be processed.");
@@ -8432,7 +8482,7 @@ if (removeAdsBtn) {
 }
 updateAdsUI();
 
-// 4. Backgrounds
+// Backgrounds
 const homeBackgroundBtn = document.getElementById("homeBackgroundBtn");
 const backgroundModal = document.getElementById("backgroundModal");
 const backgroundCloseBtn = document.getElementById("backgroundCloseBtn");
@@ -8471,11 +8521,6 @@ if (backgroundCloseBtn) {
 function renderBackgroundGrid() {
     if (backgroundGrid) {
         backgroundGrid.innerHTML = '';
-        backgroundGrid.style.display = 'flex';
-        backgroundGrid.style.gap = '10px';
-        backgroundGrid.style.justifyContent = 'center';
-        backgroundGrid.style.flexWrap = 'wrap';
-
         BG_SKINS.forEach(bg => {
             const div = document.createElement('div');
             div.style.width = '60px';
@@ -8499,15 +8544,12 @@ function renderBackgroundGrid() {
                     if (backgroundModal) backgroundModal.classList.add("hidden");
                 } else {
                     if (confirm('Watch ad to unlock this background?')) {
-                        alert('Ad watched successfully! Background unlocked.');
                         unlockedBgs.push(bg.id);
                         localStorage.setItem("cubeJumpUnlockedBgs", JSON.stringify(unlockedBgs));
-
                         activeBg = bg.id;
                         localStorage.setItem("cubeJumpBg", activeBg);
                         updateBgUI();
                         renderBackgroundGrid();
-
                         if (backgroundModal) backgroundModal.classList.add("hidden");
                     }
                 }
@@ -8518,7 +8560,7 @@ function renderBackgroundGrid() {
 }
 renderBackgroundGrid();
 
-// 5. Pet Picker
+// Pet Picker
 const petPrevBtn = document.getElementById("petPrevBtn");
 const petNextBtn = document.getElementById("petNextBtn");
 const petPreviewViewport = document.getElementById("petPreviewViewport");
@@ -8526,20 +8568,41 @@ const petPreviewViewport = document.getElementById("petPreviewViewport");
 window.cubeJumpSelectedPet = parseInt(localStorage.getItem("cubeJumpSelectedPet") || "0", 10);
 
 function updatePetUI() {
-    if (petPreviewViewport && typeof SKINS !== 'undefined') {
-        const skin = SKINS[window.cubeJumpSelectedPet];
-        petPreviewViewport.innerHTML = `<div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; color: ${skin.bodyDark}; background: ${skin.bodyLight}; border-radius: 8px;">
-            <div style="width:20px;height:20px;background:${skin.body};border:2px solid ${skin.bodyDark};"></div>
-            <span style="font-size: 10px; margin-top:4px;">${skin.name}</span>
-        </div>`;
+    if (petPreviewViewport && window.SKINS) {
+        const skin = window.SKINS[window.cubeJumpSelectedPet];
+
+        // Draw the pet using a canvas to match the game exactly
+        let canvas = petPreviewViewport.querySelector('canvas');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 100;
+            petPreviewViewport.innerHTML = '';
+            petPreviewViewport.appendChild(canvas);
+        }
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 100, 100);
+
+        // Draw the pet at center (50, 60)
+        if (typeof drawCharacter === 'function') {
+            drawCharacter(ctx, 50, 70, skin, 0, { alpha: 1, wobble: 0 });
+        } else {
+            // Fallback just in case
+            ctx.fillStyle = skin.body;
+            ctx.fillRect(30, 30, 40, 40);
+        }
     }
+
+    // Also re-render main game loop immediately to reflect change
+    if (typeof render === 'function') render();
 }
 setTimeout(updatePetUI, 500);
 
 if (petPrevBtn) {
     petPrevBtn.addEventListener("click", () => {
-        if (typeof SKINS !== 'undefined') {
-            window.cubeJumpSelectedPet = (window.cubeJumpSelectedPet - 1 + SKINS.length) % SKINS.length;
+        if (window.SKINS) {
+            window.cubeJumpSelectedPet = (window.cubeJumpSelectedPet - 1 + window.SKINS.length) % window.SKINS.length;
             localStorage.setItem("cubeJumpSelectedPet", window.cubeJumpSelectedPet);
             updatePetUI();
         }
@@ -8548,31 +8611,30 @@ if (petPrevBtn) {
 
 if (petNextBtn) {
     petNextBtn.addEventListener("click", () => {
-        if (typeof SKINS !== 'undefined') {
-            window.cubeJumpSelectedPet = (window.cubeJumpSelectedPet + 1) % SKINS.length;
+        if (window.SKINS) {
+            window.cubeJumpSelectedPet = (window.cubeJumpSelectedPet + 1) % window.SKINS.length;
             localStorage.setItem("cubeJumpSelectedPet", window.cubeJumpSelectedPet);
             updatePetUI();
         }
     });
 }
 
-const helpPanelV2 = document.getElementById("helpPanel");
-if (helpPanelV2) {
-    helpPanelV2.classList.remove("hidden");
+function fallbackCopyText(text) {
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.setAttribute("readonly", "");
+    temp.style.position = "fixed";
+    temp.style.top = "0";
+    temp.style.left = "-9999px";
+    temp.style.opacity = "0";
+    document.body.append(temp);
+    temp.focus({ preventScroll: true });
+    temp.select();
+    temp.setSelectionRange(0, temp.value.length);
+    document.execCommand("copy");
+    temp.remove();
 }
 
-const langToggleBtnV2 = document.getElementById("langToggleBtn");
-if (langToggleBtnV2) {
-    langToggleBtnV2.addEventListener("click", () => {
-        const lbl = document.getElementById("langToggleLabel");
-        const frm = document.getElementById("langToggleFrom");
-        if (lbl && frm) {
-            const isVi = lbl.textContent === "English";
-            lbl.textContent = isVi ? "Tiếng Việt" : "English";
-            frm.textContent = isVi ? "English" : "Tiếng Việt";
-        }
-    });
-}
 
 })();</script>
 
