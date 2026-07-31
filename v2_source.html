@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2026 LE NGOC THUAN. All rights reserved.
+Proprietary source. Unauthorized copying, distribution, or derivative use is prohibited.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="google-adsense-account" content="ca-pub-4612053611562290">
+    <title>Cube Jump Online</title>
+    <meta name="description" content="Play cube jump online with friends.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cubejump.app/">
+    <meta property="og:title" content="Cube Jump Online">
+    <meta property="og:description" content="Play cube jump online with friends.">
+    <meta property="og:image" content="https://cubejump.app/cubejump-share.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1024">
+    <meta property="og:image:alt" content="Cube Jump Online artwork">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Cube Jump Online">
+    <meta name="twitter:description" content="Play cube jump online with friends.">
+    <meta name="twitter:image" content="https://cubejump.app/cubejump-share.jpg">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="cubejump-icon-1024.png">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffffff'/%3E%3Cpath d='M32 8 52 20 32 32 12 20Z' fill='%23dbe7f2'/%3E%3Cpath d='M12 20 32 32v24L12 44Z' fill='%239aaabd'/%3E%3Cpath d='M52 20 32 32v24l20-12Z' fill='%23bcc9d8'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Margarine&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style-55f0e50721.css">
+</head>
+<body>
+<div id="app-shell">
+    <div id="game-wrapper">
+        <div class="circuit-bg" aria-hidden="true"></div>
+        <canvas id="gameCanvas"></canvas>
+        <button id="removeAdsBtn" class="remove-ads-btn hidden" type="button" aria-label="Remove ads">
+            <span class="remove-ads-icon" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                    <rect x="10" y="17" width="44" height="30" rx="9" fill="#ffffff"></rect>
+                    <text x="32" y="38" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="900" fill="#182230">AD</text>
+                    <circle cx="32" cy="32" r="26" fill="none" stroke="#ef233c" stroke-width="7"></circle>
+                    <path d="M14 50 50 14" stroke="#ef233c" stroke-width="7" stroke-linecap="round"></path>
+                </svg>
+            </span>
+            <span id="removeAdsBtnLabel" class="remove-ads-label">No Ads</span>
+            <span id="removeAdsPrice" class="remove-ads-price">1,99 USD</span>
+        </button>
+        <section id="startScreen" class="screen home-screen">
+            <button id="settingsBtn" class="home-settings-btn" type="button" aria-label="Setting" aria-expanded="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19.4 13.5a7.8 7.8 0 0 0 0-3l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A8 8 0 0 0 7 6.5l-2.4-1-2 3.5 2 1.5a7.8 7.8 0 0 0 0 3l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"></path>
+                </svg>
+            </button>
+            <div id="settingsPanel" class="settings-panel hidden" role="dialog" aria-modal="false" aria-labelledby="settingsPanelTitle" aria-hidden="true">
+                <h2 id="settingsPanelTitle" class="settings-title">C?i ??t</h2>
+                <button id="langToggleBtn" class="settings-action-btn" type="button" aria-label="ChuyỒn ngôn ngữ">
+                    <span id="langToggleFrom">Ti?ng Vi?t</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 7h9.2l-2.8-2.8L14.8 3 20 8.2l-5.2 5.1-1.4-1.4L16.2 9H7Zm10 8H7.8l2.8 2.8-1.4 1.4L4 14.8l5.2-5.1 1.4 1.4L7.8 13H17Z"></path>
+                    </svg>
+                    <span id="langToggleLabel">English</span>
+                </button>
+                <button id="soundToggleBtn" class="settings-action-btn" type="button" aria-pressed="true">Sound On</button>
+                <div id="helpPanel" class="help-panel" aria-labelledby="helpPanelTitle">
+                    <h2 id="helpPanelTitle">C?ch ch?i</h2>
+                    <p id="helpPanelText">Ch?m tr?i ho?c ph?i ?? nh?y ??ng h??ng. Block ?? ?i qua s? r?i; t? b??c 5, ??ng qu? l?u l?m block hi?n t?i s?p. Online b?t ??u r?i khi t?t c? ng??i ch?i qua b??c 10, timer t?nh theo ng??i ?i sau c?ng.</p>
+                </div>
+                <a class="settings-privacy-link" href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+            </div>
+            <div class="home-center">
+                <div class="home-title-stack">
+                    <h1 class="game-title-big">Cube Jump</h1>
+                    <div id="homeBestPill" class="home-best-pill">Kỷ lục: 0</div>
+                </div>
+                <div class="home-pet-picker" aria-label="Chọn nhân vật">
+                    <button id="petPrevBtn" class="pet-nav-btn" type="button" aria-label="Nh?n v?t tr??c">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M15.5 5.5 9 12l6.5 6.5-1.7 1.7L5.6 12l8.2-8.2Z"></path>
+                        </svg>
+                    </button>
+                    <div class="pet-preview-stage">
+                        <div id="petPreviewViewport" class="pet-preview-viewport" aria-hidden="true"></div>
+                    </div>
+                    <button id="petNextBtn" class="pet-nav-btn" type="button" aria-label="Nhân vật sau">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m8.5 18.5 6.5-6.5-6.5-6.5 1.7-1.7 8.2 8.2-8.2 8.2Z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="home-actions-wrapper">
+                    <div class="home-online-actions">
+                        <button id="playOnlineBtn" class="ghost-btn hero-play room-btn" type="button">
+                            <span id="playOnlineBtnLabel">Tạo phòng</span>
+                        </button>
+                        <button id="homeBackgroundBtn" class="ghost-btn hero-play room-btn" type="button">Background</button>
+                    </div>
+                    <button id="playOfflineBtn" class="play-btn hero-play">Chơi ngay</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="gameOverScreen" class="screen hidden">
+            <div class="gameover-simple">
+                <div class="gameover-scores">
+                    <div class="gameover-score-main">
+                        <span id="scoreLabel" class="gameover-label">?i?m</span>
+                        <strong id="finalScore" class="gameover-value">0</strong>
+                    </div>
+                    <div class="gameover-score-best">
+                        <span id="bestLabel" class="gameover-label">Kỷ lục</span>
+                        <strong id="bestScore" class="gameover-best-value">0</strong>
+                    </div>
+                </div>
+                <p id="dropDeathMessage" class="drop-death-message hidden"></p>
+                <div class="gameover-actions">
+                    <div class="gameover-primary-actions">
+                        <button id="retryBtn" class="play-btn compact-play liquid-chip">Chơi lại</button>
+                        <button id="menuBtn" class="hud-settings-btn gameover-settings-btn" type="button" aria-label="Setting">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M19.4 13.5a7.8 7.8 0 0 0 0-3l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A8 8 0 0 0 7 6.5l-2.4-1-2 3.5 2 1.5a7.8 7.8 0 0 0 0 3l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="gameoverMenuPopup" class="gameplay-menu-popup gameover-menu-popup hidden" role="dialog" aria-modal="false" aria-hidden="true">
+                        <button id="gameoverSoundToggleBtn" class="gameplay-menu-btn" type="button" aria-pressed="true">Sound On</button>
+                        <div class="gameplay-guide-panel" aria-labelledby="gameoverGuideTitle">
+                            <h3 id="gameoverGuideTitle" class="gameplay-menu-title">How to play</h3>
+                            <p id="gameoverGuideText" class="gameplay-guide-text"></p>
+                        </div>
+                        <a class="gameplay-menu-link" href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+                        <button id="gameoverLeaveRoomBtn" class="gameplay-menu-btn leave-room" type="button">Leave room</button>
+                    </div>
+                    <div id="gameoverRespawn" class="gameover-respawn hidden">
+                        <button id="watchAdBtn" class="ghost-btn compact-play revive-chip hidden" type="button">
+                            <span class="watch-ad-label">H?i sinh ch?i ti?p</span>
+                        </button>
+                        <p id="continueInfo" class="continue-info hidden">Tiếp tục từ checkpoint</p>
+                    </div>
+                    <button id="playOnlineDeathBtn" class="ghost-btn compact-play room-btn" type="button" aria-label="Create room">
+                        <span id="playOnlineDeathLabel">Tạo phòng</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="hud" class="hidden">
+            <button id="gameplaySettingsBtn" class="hud-settings-btn" type="button" aria-label="Setting">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="currentColor" d="M19.4 13.5a7.8 7.8 0 0 0 0-3l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A8 8 0 0 0 7 6.5l-2.4-1-2 3.5 2 1.5a7.8 7.8 0 0 0 0 3l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"></path>
+                </svg>
+            </button>
+            <div id="bestScoreHud" class="best-score-hud">Kỷ lục: 0</div>
+            <div id="scoreHud" class="score-hud">ĐiỒm: 0</div>
+            <div id="roomHud" class="room-hud hidden">
+                <div class="room-hud-body">
+                    <ul id="roomHudPlayers" class="room-hud-players"></ul>
+                </div>
+            </div>
+            <div id="gameplayMenuPopup" class="gameplay-menu-popup hidden" role="dialog" aria-modal="false" aria-hidden="true">
+                <button id="gameplaySoundToggleBtn" class="gameplay-menu-btn" type="button" aria-pressed="true">Sound On</button>
+                <div class="gameplay-guide-panel" aria-labelledby="gameplayGuideTitle">
+                    <h3 id="gameplayGuideTitle" class="gameplay-menu-title">How to play</h3>
+                    <p id="gameplayGuideText" class="gameplay-guide-text"></p>
+                </div>
+                <a class="gameplay-menu-link" href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+                <button id="gameplayLeaveRoomBtn" class="gameplay-menu-btn leave-room" type="button">Leave room</button>
+            </div>
+        </div>
+
+        <div id="recordToast" class="record-toast hidden">K? l?c m?i!</div>
+
+        <div id="touchControls" class="hidden">
+            <button id="leftControlBtn" type="button" aria-label="Nhảy trái"></button>
+            <button id="rightControlBtn" type="button" aria-label="Nhảy phải"></button>
+        </div>
+
+        <section id="roomModal" class="screen room-modal hidden" aria-hidden="true">
+            <div class="room-modal-card">
+                <div id="roomOnlineChoiceView" class="room-view room-popup-view hidden" hidden aria-hidden="true">
+                    <div class="room-online-choice-section">
+                        <h2 id="onlineChoiceTitle" class="room-choice-title">Play Online</h2>
+                        <label class="username-field room-username-field" for="usernameInput">
+                            <span id="usernameLabel" class="username-label">T?n hi?n th?</span>
+                            <input id="usernameInput" class="username-input" type="text" maxlength="24" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Nh?p t?n hi?n th? (kh?ng b?t bu?c)"c)">
+                        </label>
+                        <div class="room-online-choice-actions">
+                            <button id="onlineCreateRoomChoiceBtn" class="play-btn room-action-btn" type="button">Tạo phòng</button>
+                            <button id="onlineJoinRoomChoiceBtn" class="ghost-btn room-action-btn" type="button">Nhập code</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="roomJoinView" class="room-view room-popup-view hidden" hidden aria-hidden="true">
+                    <div class="room-join-section">
+                        <label class="room-join-label" for="homeJoinRoomCodeInput">Nhập code</label>
+                        <input id="homeJoinRoomCodeInput" class="room-join-input" type="text" maxlength="6" inputmode="text" enterkeyhint="go" lang="en" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="Nhập code">
+                        <span id="roomJoinFeedback" class="room-join-feedback"></span>
+                        <button id="joinRoomSubmitBtnMain" class="play-btn room-action-btn" type="button">Vào</button>
+                    </div>
+                </div>
+
+                <div id="roomNoticeView" class="room-view room-popup-view hidden" hidden aria-hidden="true">
+                    <div class="room-notice-card">
+                        <p id="roomNoticeText" class="room-notice-text"></p>
+                    </div>
+                </div>
+
+                <div id="roomWaitingView" class="room-view room-popup-view">
+                    <div class="room-code-section">
+                        <p id="roomCodeLabel" class="room-code-label-sm">Mã phòng</p>
+                        <div class="room-code-inline">
+                            <strong id="roomCodeValue" class="room-code-big">------</strong>
+                            <button id="copyRoomCodeBtn" class="room-copy-icon-btn" type="button" aria-label="Copy room code">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M9 9h10v11H9z"></path>
+                                    <path d="M5 4h10v3H8v8H5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <span id="roomCopyStatus" class="room-copy-feedback"></span>
+                    </div>
+
+                    <div class="room-members-section">
+                        <div class="room-members-header">
+                            <span id="roomPlayerCount" class="room-members-count-text">Players 0/6</span>
+                        </div>
+                        <ul id="roomPlayerList" class="room-members-list"></ul>
+                    </div>
+
+                    <div class="room-actions-row">
+                        <p id="roomStartHint" class="room-start-hint"></p>
+                        <button id="roomBackBtn" class="room-head-btn room-exit-btn" type="button" aria-label="Leave room">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10.8 4.8a1 1 0 0 1 1.4 1.4L8.4 10H17a1 1 0 1 1 0 2H8.4l3.8 3.8a1 1 0 0 1-1.4 1.4l-5.5-5.5a1 1 0 0 1 0-1.4Z"></path>
+                            </svg>
+                        </button>
+                        <button id="playNowBtn" class="play-btn room-action-btn" type="button">B?t ??u</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="backgroundModal" class="screen background-modal hidden" aria-hidden="true">
+            <div class="background-modal-card">
+                <div class="background-modal-head">
+                    <button id="backgroundCloseBtn" class="room-head-btn background-back-btn" type="button" aria-label="Back">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3Z"></path>
+                        </svg>
+                    </button>
+                    <h2 id="backgroundTitle" class="background-title">Choose Background</h2>
+                    <span class="background-head-spacer" aria-hidden="true"></span>
+                </div>
+                <div id="backgroundGrid" class="background-grid"></div>
+                <a id="backgroundCreditLink" class="background-credit-link" href="https://patterncraft.fun/" target="_blank" rel="noopener noreferrer">Backgrounds by PatternCraft</a>
+            </div>
+        </section>
+
+        <section id="backgroundRewardPopup" class="background-reward-popup hidden" aria-hidden="true">
+            <div class="background-reward-card" role="dialog" aria-modal="true" aria-labelledby="backgroundRewardTitle">
+                <button id="backgroundRewardCloseBtn" class="background-reward-close" type="button" aria-label="Close">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4Z"></path>
+                    </svg>
+                </button>
+                <div class="background-reward-copy">
+                    <h2 id="backgroundRewardTitle" class="background-reward-title">Unlock Background</h2>
+                    <p id="backgroundRewardText" class="background-reward-text"></p>
+                </div>
+                <button id="backgroundRewardClaimBtn" class="background-reward-claim" type="button">Claim</button>
+            </div>
+        </section>
+
+        <section id="systemPopup" class="system-popup hidden" aria-hidden="true">
+            <div class="system-popup-card" role="alertdialog" aria-modal="true" aria-labelledby="systemPopupTitle">
+                <div class="system-popup-copy">
+                    <h2 id="systemPopupTitle" class="system-popup-title">Room Connection</h2>
+                    <p id="systemPopupText" class="system-popup-text"></p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+
+<script>
+    window.__cubeJumpAdsConfig = {
+        rewardedAdUnitPath: "/YOUR_NETWORK_CODE/cubejump_rewarded",
+        backgroundRewardedAdUnitPath: "",
+        debug: false
+    };
+
+    (function () {
+        const state = {
+            slot: null,
+            rewardGranted: false,
+            onRewarded: null,
+            onDismissed: null,
+            onFailed: null,
+            configured: false,
+            initialized: false
+        };
+
+        function cleanupSlot() {
+            if (!window.googletag || !state.slot) return;
+            try {
+                window.googletag.destroySlots([state.slot]);
+            } catch (error) {
+                console.warn("[CubeJumpAds] Failed to destroy rewarded slot", error);
+            }
+            state.slot = null;
+        }
+
+        function resetState() {
+            state.rewardGranted = false;
+            state.onRewarded = null;
+            state.onDismissed = null;
+            state.onFailed = null;
+            cleanupSlot();
+        }
+
+        function fail(error) {
+            const callback = state.onFailed;
+            resetState();
+            callback?.(error instanceof Error ? error : new Error(String(error || "Rewarded ad failed")));
+        }
+
+        window.googletag = window.googletag || { cmd: [] };
+
+        function ensureServices() {
+            if (state.initialized) return;
+
+            window.googletag.cmd.push(function () {
+                if (state.initialized) return;
+                const pubads = window.googletag.pubads();
+
+                pubads.addEventListener("rewardedSlotReady", function (event) {
+                    if (event.slot !== state.slot) return;
+                    event.makeRewardedVisible();
+                });
+
+                pubads.addEventListener("rewardedSlotGranted", function (event) {
+                    if (event.slot !== state.slot) return;
+                    state.rewardGranted = true;
+                    state.onRewarded?.();
+                });
+
+                pubads.addEventListener("rewardedSlotClosed", function (event) {
+                    if (event.slot !== state.slot) return;
+                    const dismissed = !state.rewardGranted;
+                    const onDismissed = state.onDismissed;
+                    resetState();
+                    if (dismissed) onDismissed?.();
+                });
+
+                pubads.addEventListener("slotRenderEnded", function (event) {
+                    if (event.slot !== state.slot) return;
+                    if (event.isEmpty) {
+                        fail(new Error("Rewarded ad inventory is empty"));
+                    }
+                });
+
+                window.googletag.enableServices();
+                state.initialized = true;
+            });
+        }
+
+        function getRewardedAdUnitPath(options = {}) {
+            return options.adUnitPath
+                || (options.placement === "background" && window.__cubeJumpAdsConfig?.backgroundRewardedAdUnitPath)
+                || window.__cubeJumpAdsConfig?.rewardedAdUnitPath
+                || "";
+        }
+
+        function isConfigured(options = {}) {
+            const adUnitPath = getRewardedAdUnitPath(options);
+            state.configured = !!adUnitPath && !adUnitPath.includes("YOUR_NETWORK_CODE");
+            return state.configured;
+        }
+
+        window.__showRewardedAd = function (options = {}) {
+            const { onRewarded, onDismissed, onFailed } = options;
+            const adUnitPath = getRewardedAdUnitPath(options);
+            if (window.__cubeJumpAdsDisabled === true) {
+                onRewarded?.();
+                return;
+            }
+            if (!isConfigured(options)) {
+                onFailed?.(new Error("Missing rewarded ad unit path. Set window.__cubeJumpAdsConfig.rewardedAdUnitPath in index.html."));
+                return;
+            }
+
+            if (!window.googletag || !window.googletag.enums?.OutOfPageFormat?.REWARDED) {
+                onFailed?.(new Error("Google Publisher Tag is not ready or rewarded ads are unsupported on this device/browser."));
+                return;
+            }
+
+            if (state.slot) {
+                onFailed?.(new Error("Another rewarded ad is already loading or showing."));
+                return;
+            }
+
+            ensureServices();
+
+            window.googletag.cmd.push(function () {
+                const slot = window.googletag.defineOutOfPageSlot(adUnitPath, window.googletag.enums.OutOfPageFormat.REWARDED);
+
+                if (!slot) {
+                    onFailed?.(new Error("This page does not support rewarded ads for the current device/browser."));
+                    return;
+                }
+
+                state.slot = slot;
+                state.rewardGranted = false;
+                state.onRewarded = typeof onRewarded === "function" ? onRewarded : null;
+                state.onDismissed = typeof onDismissed === "function" ? onDismissed : null;
+                state.onFailed = typeof onFailed === "function" ? onFailed : null;
+
+                slot.addService(window.googletag.pubads());
+                window.googletag.display(slot);
+            });
+        };
+
+        window.__cubeJumpAdsDebug = { resetState };
+    })();
+</script>
+
+<script src="engine-15dc71f900.js"></script>
+<script src="online-d150751214.js"></script>
+<script src="game-3baa65df43.js"></script>
+<script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch((error) => {
+                console.warn("Cube Jump offline cache registration failed", error);
+            });
+        });
+    }
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"1ea9cbfe466a43dd90cce47cc0e56e20","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
