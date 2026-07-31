@@ -1,0 +1,15 @@
+{
+  "name": "cubejump-backend",
+  "version": "1.0.0",
+  "description": "Backend demo for Cube Jump game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
+    "express": "^4.22.1",
+    "ws": "^8.20.0"
+  }
+}
